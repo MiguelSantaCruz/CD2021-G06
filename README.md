@@ -10,9 +10,25 @@ os ficheiros de saída devem ficar com o mesmo nome dos ficheiros de entrada
 acrescentando uma terminação que identifica uma determinada operação. Cada
 módulo é identificado por um argumento do programa.
 
-/A. Módulo para cálculo das frequências dos símbolos e compressão RLE
-/B. Módulo para cálculo das tabelas de codificação 
-/C. Módulo para codificação do ficheiro original/RLE 
-/D. Módulo para descodificação do ficheiro comprimido 
+## Módulos:
+
+A. Módulo para cálculo das frequências dos símbolos e compressão RLE:
+```
+Grupo 1: Sofia Gomes e José João
+```
+
+B. Módulo para cálculo das tabelas de codificação:
+```
+Grupo 3: André Silva e João Nunes
+```
+C. Módulo para codificação do ficheiro original/RLE:
+```
+Grupo 2: Marisa Soares e Miguel Santa Cruz
+```
+D. Módulo para descodificação do ficheiro comprimido:
+```
+Grupo 4: Benjamin Costa e Armando Silva
+```
 E. Otimização por execução paralela
+
 F. Relatório e outras recomendações 
