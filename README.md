@@ -1,4 +1,4 @@
-# CD2020
+# Trabalho prático Comunicação de Dados
 
 Introdução
 A ferramenta deve chamar-se shafa e deve ser construída por módulos, em que
