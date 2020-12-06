@@ -1,6 +1,6 @@
 # Trabalho prático Comunicação de Dados
 
-Introdução
+#Introdução
 A ferramenta deve chamar-se shafa e deve ser construída por módulos, em que
 cada módulo implementa uma funcionalidade (ou fase) específica, tem um
 determinado grupo de ficheiros de entrada e gera um determinado grupo de
