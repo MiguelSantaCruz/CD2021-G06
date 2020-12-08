@@ -27,7 +27,7 @@ Grupo 2: Marisa Soares e Miguel Santa Cruz
 ```
 D. Módulo para descodificação do ficheiro comprimido:
 ```
-Grupo 4: Benjamin Costa e Armando Silva
+Grupo 4: Benjamim Costa e Armando Silva
 ```
 E. Otimização por execução paralela
 
