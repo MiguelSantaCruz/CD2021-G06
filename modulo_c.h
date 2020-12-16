@@ -11,19 +11,16 @@
 
 #define READ_SIZE 4081
 #define BUF_SIZE 17
-#define CODE_SIZE 17
-#define NUMBER_OF_SYMBOLS 255
-
-//Função que lê o ficheiro original/RLE e codifica o simbolos
-void readFile(FILE *file,FILE *shaf,char *codes);
-
-//Função que escreve o ficheiro .shaf
-void writeFile(FILE *shaf,char *c);
+#define CODE_SIZE 16
+#define NUMBER_OF_SYMBOLS 256
 
 //Função que lê o ficheiro .cod e cria uma matriz com os códigos dos simbolos
-char* readCod(FILE *cod,char *p);
+void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePointer,int firstTime);
 
-//Função que completa a sequencia com zeros
-void completeWithZeros(char *code,int codeBit);
+//Função que lê do ficheiro o bloco e escreve a matriz dos codigos
+void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE],int *index, int symbol,char *code,char* string);
+
+//Função que escreve um bloco traduzido para o ficheiro shaf
+void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE],int blockSize,FILE *cod,FILE *file,FILE *shaf);
 
 #endif //__MODULO_C_H__
