@@ -15,12 +15,12 @@
 #define NUMBER_OF_SYMBOLS 256
 
 //Função que lê o ficheiro .cod e cria uma matriz com os códigos dos simbolos
-void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePointer,int firstTime);
+void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePointer,int firstTime,int blockIndex);
 
 //Função que lê do ficheiro o bloco e escreve a matriz dos codigos
 void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE],int *index, int symbol,char *code,char* string);
 
 //Função que escreve um bloco traduzido para o ficheiro shaf
-void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE],int blockSize,FILE *cod,FILE *file,FILE *shaf);
+void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE],int blockSize,int blockNumber,int firstTime,FILE *cod,FILE *file,FILE *shaf);
 
 #endif //__MODULO_C_H__
