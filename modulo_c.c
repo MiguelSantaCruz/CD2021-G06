@@ -204,8 +204,8 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE],int blockS
         }
         count++;  
     }
-    printf("Tamanho comprimido: %d bytes\n",count/8);
-    printf("Taxa de compressão: %.1f %%\n",((blockSize-((float)count/8))/blockSize)*100);
+    printf("Tamanho comprimido: %d bytes\n",indexCode);
+    printf("Taxa de compressão: %.1f %%\n",((float)(blockSize-indexCode)/blockSize)*100);
     fwrite(binaryCodes,1,count,shaf);
     return;  
 }
