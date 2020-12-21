@@ -196,7 +196,7 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE],int blockS
         for (int j = 0; codesMatrix[buffer[i]][j]!='\0'; j++){
             if(n > 7) {
                 binaryCodes[indexCode]= strtol(code,NULL,2);
-               // printf("%lu\n",strtol(code,NULL,2));
+                //printf("%lu\n",strtol(code,NULL,2));
                 indexCode++;
                 n = 0;
                 code[n++]=codesMatrix[buffer[i]][j];
@@ -206,7 +206,7 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE],int blockS
     }
     printf("Tamanho comprimido: %d bytes\n",indexCode);
     printf("Taxa de compressão: %.1f %%\n",((float)(blockSize-indexCode)/blockSize)*100);
-    fwrite(binaryCodes,1,count,shaf);
+    fwrite(binaryCodes,1,indexCode,shaf);
     return;  
 }
 
