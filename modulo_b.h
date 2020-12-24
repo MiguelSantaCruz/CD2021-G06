@@ -20,6 +20,16 @@ void readFreqs (FILE *freq, int *indexPointer, char *buffer, long long block_siz
 
 int distArroba (FILE *freq, int size, int x);
 
-void toStruct (struct node nodes[256], char *buffer, long long n_blocks, char *freq_Array);
+void toStruct (struct node nodes[], char *buffer, long long n_blocks, int *freq_Array, int pos_freqs);
+
+void minSort (int *freq_Array);
+
+int calcular_melhor_divisao (int *freqArray, int i, int j);
+
+void calcular_codigos_SF (int *freqArray, char *codes, int start, int end);
+
+int soma (int *freqArray, int i, int j);
+
+void add_bit_to_code (char c, char *codes, int start, int end);
 
 #endif

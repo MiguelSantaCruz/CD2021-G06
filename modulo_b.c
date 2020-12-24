@@ -64,7 +64,7 @@ int main (int argc, char* argv[]){
             break;
         }
     }
-
+    int pos_freqs = index;
     index = index-k-1;
     fseek(ficheiroFreq, index, SEEK_SET);
 
@@ -81,8 +81,12 @@ int main (int argc, char* argv[]){
     //total = (n_blocks-1) * block_size + size_of_last_block;
 
     //Função que le
-    char *freq_Array;
-    freq_Array = (char *)malloc(total);
+    int freq_Array[256];
+    char *codes;
+    codes = (char *)malloc(256);
+    //freq_Array = (int *)malloc(total);
+    memset(freq_Array,0,256);
+    //memset(codes,-1,256);
     int i = 0;
     int m = 1;
     int dist = 0;
@@ -91,9 +95,10 @@ int main (int argc, char* argv[]){
     entry_buffer = (char *)malloc(total);
     char temp;
     char strtemp[12];
+    int array_size = 0;
     char *size_of_last_block_string;
     struct node nodes[256];
-    printf("%s\n","abc5");
+    memset (&nodes, -1 ,256*sizeof(node));
 
     while (i<n_blocks-1){
         dist = 256+distArroba (ficheiroFreq, 0, 0);
@@ -101,15 +106,27 @@ int main (int argc, char* argv[]){
         readFreqs(ficheiroFreq, indexpointer , entry_buffer, dist); //256 = distancia ate proxima arroba
         i++;
         indexpointer += dist;
-        printf("ENTRY BUFFER - %s\n", entry_buffer);
-        printf("ARRAYAAA-:%s\n", freq_Array);
-        toStruct (nodes, entry_buffer, n_blocks, freq_Array);
-        printf("F-Arr:%s\n", freq_Array);
+        toStruct (nodes, entry_buffer, n_blocks, freq_Array, pos_freqs);
+        minSort (freq_Array);
+        /*
+        int g=0;
+        for (g =0; g<256;g+=1){
+            printf("FREQB - %d\n",freq_Array[g]);
+        }*/
+        for(int f=0; f<256; f++){
+            if(freq_Array[f]!=0) array_size++;
+        }
+        printf("ARRS-%d\n", array_size);
+
+        calcular_codigos_SF (freq_Array, codes, 0, array_size-1);
+        printf("CODES- %s\n", codes);
+        
         
         /*
         for(int z=0; z<256; z++){
-            printf("\n\nSymb - %d\n", nodes->symbol);
-            printf("Freq - %d\n", nodes->freq);
+            printf("\n\nSymbI - %d\n", nodes[z].init_symbol);
+            printf("SymbF - %d\n", nodes[z].final_symbol);
+            printf("Freq - %d\n", nodes[z].freq);
             z++;
         }*/
     }
@@ -145,7 +162,7 @@ int main (int argc, char* argv[]){
     fclose (ficheiroFreq);
     free(entry_buffer);
     free(c_block_size);
-    free(freq_Array);
+    //free(freq_Array);
     printf("%s\n","abc7");
 
     //FUnção que shano
@@ -165,7 +182,6 @@ int main (int argc, char* argv[]){
 }
 
 void readFreqs (FILE *freq, int *indexPointer, char *buffer, long long block_size){
-    printf("Deu certo");
 
     fread(buffer, sizeof(char), block_size, freq);
 }
@@ -195,9 +211,9 @@ int distArroba (FILE *freq, int size, int x){
     return i;
 }
 
-void toStruct (struct node nodes[256],char *buffer, long long n_blocos, char *freq_array){
+void toStruct (struct node nodes[],char *buffer, long long n_blocos, int *freq_array, int pos_freqs){
     int i = 0;
-    int j = 6;
+    int j = pos_freqs;
     char c;
     char str[20];
 
@@ -212,18 +228,80 @@ void toStruct (struct node nodes[256],char *buffer, long long n_blocos, char *fr
                 }
                 nodes[i].final_symbol = j-1;
                 nodes[i].freq = atoi(str);
-
-                freq_array[i] = atoi(str);
-                printf ("ARRAY-%s\n", freq_array);
-                printf("STRINGA - %s\n", str);
+                if(atoi(str)!= 0) freq_array[i] = atoi(str);
                 str[0] = '\0';
-                printf("STRINGD - %s\n", str);
+                i+=1;
             }
         }
-        i++;
         j++;
     }
 }
+
+void minSort (int *freqArray){
+    int i,j,temp;
+
+    for (i = 0; i < 256; i+=1){
+        for (j = i + 1; j < 256; j++){
+            if(freqArray[i] < freqArray[j]){
+                temp = freqArray[i];
+                freqArray[i] = freqArray[j];
+                freqArray[j] = temp;
+            }
+        }
+    }
+}
+
+int calcular_melhor_divisao (int *freqArray, int i, int j){
+    int div=i, g1=0,total,mindif,dif;
+    total=mindif=dif=soma(freqArray,i,j);
+    printf("TOTAL-%d\n",total);
+    do{
+        printf("1 VEZ - %s\n", "...");
+        g1=g1+freqArray[div];
+        printf ("G1 - %d\n", g1);
+        dif=abs(2*g1-total);
+        printf ("DIF - %d\n", dif);
+        if (dif<mindif){ 
+            div=div+1;
+            mindif=dif;
+        }
+        else dif=mindif+1;
+    } while (dif!=mindif);
+    return div-1;
+ }
+
+void calcular_codigos_SF (int *freqArray, char *codes, int start, int end){
+
+    if (start!=end){
+        printf("%s\n","SF");
+        int div=calcular_melhor_divisao(freqArray, start, end);
+        printf ("DIV-%d\n",div);
+        add_bit_to_code('0', codes, start, div);
+        add_bit_to_code('1', codes, div+1, end);
+        calcular_codigos_SF(freqArray, codes, start, div);
+        calcular_codigos_SF(freqArray, codes, div+1, end);
+    }
+ } 
+
+ int soma (int *freqArray, int i, int j){
+     int total=0;
+
+     for (i;i<=j;i+=1){
+         if(freqArray[i]==0) break;
+         printf("FRQ-%d\n", freqArray[i]);
+         total += freqArray[i];
+     }
+
+     return total;
+ }
+
+ void add_bit_to_code (char c, char *codes, int start, int end){
+
+     for (start; start<=end; start+=1){
+        strncat (&codes[start],&c, 1);
+     }
+ }
+
 
 
 
