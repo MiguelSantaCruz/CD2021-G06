@@ -4,6 +4,8 @@
 #include "modulo_b.h"
 #include "fsize.h"
 
+#define NUMBER_OF_FREQ 256
+
 
 
 int main (int argc, char* argv[]){
@@ -82,8 +84,9 @@ int main (int argc, char* argv[]){
 
     //Função que le
     int freq_Array[256];
-    char *codes;
-    codes = (char *)malloc(256);
+    char *codes, *final_codes;
+    codes = (char *)malloc(256*256);
+    final_codes = (char *)malloc(256);
     //freq_Array = (int *)malloc(total);
     memset(freq_Array,0,256);
     //memset(codes,-1,256);
@@ -99,6 +102,7 @@ int main (int argc, char* argv[]){
     char *size_of_last_block_string;
     struct node nodes[256];
     memset (&nodes, -1 ,256*sizeof(node));
+    
 
     while (i<n_blocks-1){
         dist = 256+distArroba (ficheiroFreq, 0, 0);
@@ -117,18 +121,62 @@ int main (int argc, char* argv[]){
             if(freq_Array[f]!=0) array_size++;
         }
         printf("ARRS-%d\n", array_size);
+        
+        char _matrix [NUMBER_OF_FREQ][NUMBER_OF_FREQ];
+        calcular_codigos_SF (freq_Array, codes, _matrix, 0, array_size-1, 0);
 
-        calcular_codigos_SF (freq_Array, codes, 0, array_size-1);
+        printf("\n");
+        char d = ';';
+        int cont=0;
+
+        for(int i=0; i<NUMBER_OF_FREQ && i<array_size; i++){
+            for(int j=0; j<NUMBER_OF_FREQ && j<array_size-1; j++){
+                if(_matrix[i][j] =='0' || _matrix[i][j] =='1'){                
+                    codes[cont]=_matrix[i][j];
+                    cont++;
+                    
+                }
+            }
+            codes[cont]=d;
+            cont++;
+        }
         printf("CODES- %s\n", codes);
+        int f,h, g = -1;
+        char tmp[256];
+        //for(int g = 0; g<sizeof(freq_Array)/sizeof(freq_Array[0]); g++){
+        for (int z = 0; z<strlen(codes); z++){
+            g++;
+            for (int k = 0; k<256; k++){
+                if (nodes[k].freq==freq_Array[g]){
+                    f=z;
+                    while (codes[f]!= ';'){
+                        tmp[h]=codes[f];
+                        h++;
+                        f++;
+                    }
+                    z+=h;
+                    tmp[h]='\0';
+                    printf("TMP-%s\n",tmp);
+                    strcpy (nodes[k].code, tmp);
+                    printf("Freq - %d\n", nodes[k].freq);
+                    printf("Code -%s\n",nodes[k].code);
+                    h=0;
+                    break;
+                }
+            }
+        }
         
         
-        /*
-        for(int z=0; z<256; z++){
-            printf("\n\nSymbI - %d\n", nodes[z].init_symbol);
-            printf("SymbF - %d\n", nodes[z].final_symbol);
-            printf("Freq - %d\n", nodes[z].freq);
-            z++;
-        }*/
+        for(int ab=0; ab<256; ab++){
+            if(nodes[ab].init_symbol!=-1){
+                printf("\n\nSymbI - %d\n", nodes[ab].init_symbol);
+                printf("SymbF - %d\n", nodes[ab].final_symbol);
+                printf("Freq - %d\n", nodes[ab].freq);
+                printf("Cod - %s\n", nodes[ab].code);
+            }
+        }
+
+        
     }
 
     printf ("\n\n\n1-%s\n\n\n", entry_buffer);
@@ -162,7 +210,7 @@ int main (int argc, char* argv[]){
     fclose (ficheiroFreq);
     free(entry_buffer);
     free(c_block_size);
-    //free(freq_Array);
+    free(final_codes);
     printf("%s\n","abc7");
 
     //FUnção que shano
@@ -270,16 +318,29 @@ int calcular_melhor_divisao (int *freqArray, int i, int j){
     return div-1;
  }
 
-void calcular_codigos_SF (int *freqArray, char *codes, int start, int end){
+void calcular_codigos_SF (int *freqArray, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col){
 
     if (start!=end){
+
         printf("%s\n","SF");
         int div=calcular_melhor_divisao(freqArray, start, end);
         printf ("DIV-%d\n",div);
-        add_bit_to_code('0', codes, start, div);
-        add_bit_to_code('1', codes, div+1, end);
-        calcular_codigos_SF(freqArray, codes, start, div);
-        calcular_codigos_SF(freqArray, codes, div+1, end);
+        add_bit_to_code('0', codes, _matrix, start, div, col);
+        add_bit_to_code('1', codes, _matrix, div+1, end, col);
+        if(start==0){
+            int i,j;
+            char temp;
+            for(j=1;j<strlen(codes); j+=2){
+                for(i=strlen(codes); i>=j; i--){
+                    codes[i]=codes[i-1];
+                }
+                codes[j-1] = ';';
+            }
+        }
+        printf("\nCODES - %s\n", codes);
+        col++;
+        calcular_codigos_SF(freqArray, codes, _matrix, start, div, col);
+        calcular_codigos_SF(freqArray, codes, _matrix, div+1, end, col);
     }
  } 
 
@@ -295,12 +356,64 @@ void calcular_codigos_SF (int *freqArray, char *codes, int start, int end){
      return total;
  }
 
- void add_bit_to_code (char c, char *codes, int start, int end){
+ void add_bit_to_code (char c, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col){
+     
+     printf("start = %d\n",start);
+     printf("end = %d\n",end);
+     printf("col = %d\n",col);
+     printf("C = %c\n",c);
 
-     for (start; start<=end; start+=1){
-        strncat (&codes[start],&c, 1);
+     for(start; start<=end;start++){
+         _matrix[start][col] = c;
+         printf("CHAR-%c\n",_matrix[start][col]);
      }
+
  }
+
+/*
+void add_bit_to_code(char c, char *codes, int start, int end) {
+  char nCodes[end-start+1], *lCodes, *rCodes;
+  printf("START %d, END %d\n", start, end);
+  for (int i=0; i<sizeof(nCodes); i++){
+    nCodes[i] = c;
+  }
+  printf("NCODES - %s\n",nCodes);
+
+  int len = strlen(codes);
+  lCodes = add_bit_to_code_AUX(codes, 0, start);
+  printf("LCODES - %s\n",lCodes);
+  rCodes = add_bit_to_code_AUX(codes, start, len-start+1);
+  printf("RCODES - %s\n",rCodes);
+ 
+  strcpy(codes, "");
+  strcat(codes, lCodes);
+  free(lCodes);
+
+  strcat(codes, nCodes);
+  strcat(codes, rCodes);
+  free(rCodes);
+}
+
+char *add_bit_to_code_AUX(char *codes, int start, int len) {
+  char *str;
+  int c;
+
+  str = malloc(len+1);
+  for(c = 0; c<len; c++)
+    *(str+c) = *((codes+start)+c);
+
+  *(str+c) = '\0';
+  return str;
+}*/
+
+        /*
+     for (start; start<=end; start+=1){
+        char *buf = (char *) malloc(strlen(codes)+3);
+        strncpy (buf, codes, start);
+        int len = strlen(buf);
+        buf[];
+     }*/
+ 
 
 
 

@@ -1,5 +1,6 @@
 #ifndef __MODULO_B_H__
 #define __MODULO_C_H__
+#define NUMBER_OF_FREQ 256
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,7 @@ typedef struct node {
     int init_symbol; //109
     int final_symbol;
     int freq; // 768
-    int code; // 10
+    char code[256]; // 10
 }node;
 
 void readFreqs (FILE *freq, int *indexPointer, char *buffer, long long block_size);
@@ -26,10 +27,12 @@ void minSort (int *freq_Array);
 
 int calcular_melhor_divisao (int *freqArray, int i, int j);
 
-void calcular_codigos_SF (int *freqArray, char *codes, int start, int end);
+void calcular_codigos_SF (int *freqArray, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col);
 
 int soma (int *freqArray, int i, int j);
 
-void add_bit_to_code (char c, char *codes, int start, int end);
+void add_bit_to_code (char c, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col);
+
+char *add_bit_to_code_AUX(char *codes, int start, int len);
 
 #endif
