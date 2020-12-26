@@ -4,10 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "main.h"
-#include "modulo_a.h"
-#include "modulo_b.h"
-#include "modulo_d.h"
+//#include "main.h"
+//#include "modulo_a.h"
+//#include "modulo_b.h"
+//#include "modulo_d.h"
 
 #define READ_SIZE 4081
 #define BUF_SIZE 17
