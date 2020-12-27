@@ -98,6 +98,7 @@ int main(int argc, char *argv[]){
     finalTimeSec = t.tv_sec;
     finalTimeNSec = t.tv_nsec;
     printf("Tempo total : %.1f ms\n",(finalTimeSec-initialTimeSec)*1e3+(finalTimeNSec-initialTimeNSec)/1e6);
+    printf("Ficheiro de saída: %s\n",shafFilename);
     return 0;
 }
 
@@ -161,7 +162,7 @@ void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePoint
     }
     index++;
     blockSize = atoi(buffer);
-    printf("Tamanho do %dº bloco: %d bytes\n",blockIndex+1,blockSize);
+    if(blockSize) printf("Tamanho do %dº bloco: %d bytes\n",blockIndex+1,blockSize);
     //Debugging ----------------------------------------
     //printf("Tamanho do bloco: %d\n",blockSize);
     //--------------------------------------------------
@@ -176,7 +177,7 @@ void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePoint
     int symbol = 0;
     *indexPointer = index;
     readAndWriteToMatrix(codesMatrix,indexPointer,symbol,code,string);
-    printMatrix(codesMatrix);
+    //printMatrix(codesMatrix);
     writeBlockToShaf(codesMatrix,blockSize,blockNumber,firstTime,cod,file,shaf);
     return;
 }
@@ -230,14 +231,14 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int bloc
 void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]){
     for (int i = 0; i < NUMBER_OF_SYMBOLS; i++)
     {
-        //if (codesMatrix[i][0]!='\0') {
+        if (codesMatrix[i][0]!='\0') {
             printf("%d: ",i);
             for (int j = 0; codesMatrix[i][j]!='\0'; j++)
             {
                 printf("%c ",codesMatrix[i][j]);
             }  
         printf("\n");
-        //} 
+        } 
     }
 }
 
@@ -259,7 +260,6 @@ void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *
         symbol++;
         index = i;
     }
-    //codesMatrix[254][codeBit]='\0';
     *indexPointer = index;
     return;
 }
