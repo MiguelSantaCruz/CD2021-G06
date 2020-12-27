@@ -17,7 +17,7 @@ typedef struct node {
     char code[256]; // 10
 }node;
 
-void readFreqs (FILE *freq, int *indexPointer, char *buffer, long long block_size);
+void readFreqs (FILE *freq, int indexPointer, char *buffer, long long block_size);
 
 int distArroba (FILE *freq, int size, int x);
 
@@ -34,5 +34,11 @@ int soma (int *freqArray, int i, int j);
 void add_bit_to_code (char c, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col);
 
 char *add_bit_to_code_AUX(char *codes, int start, int len);
+
+void itoa(int n, char s[]);
+
+void reverse(char s[]);
+
+void moveToBuffer(struct node nodes[], char *exitBuffer, int pos);
 
 #endif
