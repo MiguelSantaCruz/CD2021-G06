@@ -18,7 +18,7 @@
 void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePointer,int firstTime,int blockIndex);
 
 //Função que lê do ficheiro o bloco e escreve a matriz dos codigos
-void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *index, int symbol,char *code,char* string);
+void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *index,char* string);
 
 //Função que escreve um bloco traduzido para o ficheiro shaf
 void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,FILE *cod,FILE *file,FILE *shaf);
