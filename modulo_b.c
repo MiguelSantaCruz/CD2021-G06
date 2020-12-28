@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "modulo_b.h"
-#include "fsize.h"
+//#include "fsize.h"
 
 #define NUMBER_OF_FREQ 256
 
@@ -82,28 +82,14 @@ int main (int argc, char* argv[]){
         }
     }
 
-    printf("NBS-%s\n",n_blocks_s);
-    printf("ATOI-%d\n",atoi(n_blocks_s));
     int nb=atoi(n_blocks_s);
-    printf("INT-%d\n",nb);
     n_blocks = nb;
-    printf("NB-%lld\n",n_blocks);
-    int pos_freqs = index;
+    int pos_freqs = index-2;
     index = index-k-1;
     fseek(ficheiroFreq, index, SEEK_SET);
 
-
-    //rewind(ficheiroFreq);
-    //fseek (ficheiroFreq, 0, SEEK_SET);
-    //printf("Block size str %s\n", c_block_size);
     block_size = atoi(c_block_size);
     free(c_block_size);
-    //printf("Block size %lu\n", block_size);
-    //printf("Size of last block %ld\n", size_of_last_block);
-    //n_blocks = fsize(ficheiroFreq, NULL, &block_size, &size_of_last_block);
-    //printf ("Total blocks %lld\n", n_blocks);
-    //printf("Size of last block %ld\n", size_of_last_block);
-    //total = (n_blocks-1) * block_size + size_of_last_block;
 
     //Função que le
     
@@ -119,42 +105,55 @@ int main (int argc, char* argv[]){
     int pos = 0;
     char strtemp2[100];
     int fst_time = 0;
+    char *exit_buffer;
+    exit_buffer = (char *)malloc(256);
+    char *codes;
+    codes = (char *)malloc(256*256);
+    int cont;
 
     FILE * ficheiroCod = fopen ("aaa.txt.cod", "wb");
+    if (ficheiroCod == NULL){
+        printf ("ERRO: Erro ao abrir o ficheiro!\n");
+        exit(3);
+    }
 
     while (i<n_blocks-1){
+        exit_buffer[0]='\0';
+        codes[0] = '\0';
         char _matrix [NUMBER_OF_FREQ][NUMBER_OF_FREQ] = {'x'};
-        char *codes;
         array_size = 0;
-        codes = (char *)malloc(256*256);
-        codes[0]='\0';
         int freq_Array[256];
         memset(freq_Array,0,256);
         memset (&nodes, -1 ,256*sizeof(node));
         char *entry_buffer;
-        entry_buffer = (char *)malloc(total);
         dist = 256+distArroba (ficheiroFreq, 0, 0);
+        entry_buffer = (char *)malloc(dist+1);
         fseek(ficheiroFreq, indexpointer, SEEK_SET);
-        readFreqs(ficheiroFreq, indexpointer , entry_buffer, dist); //256 = distancia ate proxima arroba
+        fread(entry_buffer, sizeof(char), dist, ficheiroFreq);
+        printf("ENTRYB-%s\n", entry_buffer);
+        printf("dist-%d, ind-%d\n", dist, indexpointer);
+        printf("posfreq-%d\n", pos_freqs);
         i++;
         indexpointer += dist;
         toStruct (nodes, entry_buffer, n_blocks, freq_Array, pos_freqs);
-        minSort (freq_Array);
-
 
         for(int f=0; f<256; f++){
             if(freq_Array[f]!=0) array_size++;
         }
-        //printf("ARRS-%d\n", array_size);
-        
-        calcular_codigos_SF (freq_Array, codes, _matrix, 0, array_size-1, 0);
 
+        minSort (freq_Array, array_size);
+
+        for(int f=0; f<256; f++){
+            printf("ARR-%d\n",freq_Array[f]);
+        }
+        
+        calcular_codigos_SF (freq_Array, _matrix, 0, array_size-1, 0);
         char d = ';';
-        int cont=0;
+        cont = 0;
 
         for(int i=0; i<NUMBER_OF_FREQ && i<array_size; i++){
             for(int j=0; j<NUMBER_OF_FREQ && j<array_size-1; j++){
-                if(_matrix[i][j] =='0' || _matrix[i][j] =='1'){                
+                if(_matrix[i][j] =='0' || _matrix[i][j] =='1'){             
                     codes[cont]=_matrix[i][j];
                     cont++;
                     
@@ -163,10 +162,10 @@ int main (int argc, char* argv[]){
             codes[cont]=d;
             cont++;
         }
-        printf("CODES- %s\n", codes);
+
         int f,h, g = -1;
         char tmp[256];
-        
+
         for (int z = 0; z<strlen(codes); z++){
             g++;
             for (int k = 0; k<256; k++){
@@ -179,29 +178,13 @@ int main (int argc, char* argv[]){
                     }
                     z+=h;
                     tmp[h]='\0';
-                    //printf("TMP-%s\n",tmp);
                     strcpy (nodes[k].code, tmp);
-                    //printf("Freq - %d\n", nodes[k].freq);
-                    //printf("Code -%s\n",nodes[k].code);
                     h=0;
                     break;
                 }
             }
         }
-        free(codes);
         
-        /*
-        for(int ab=0; ab<256; ab++){
-            if(nodes[ab].init_symbol!=-1){
-                printf("\n\nSymbI - %d\n", nodes[ab].init_symbol);
-                printf("SymbF - %d\n", nodes[ab].final_symbol);
-                printf("Freq - %d\n", nodes[ab].freq);
-                printf("Cod - %s\n", nodes[ab].code);
-            }
-        }*/
-        free (entry_buffer);
-        char *exit_buffer;
-        exit_buffer = (char *)malloc(total);
 
         if (fst_time == 0){
             strncat (exit_buffer, "@", 1);
@@ -220,27 +203,24 @@ int main (int argc, char* argv[]){
         strncat (exit_buffer, "@", 1);
 
         moveToBuffer(nodes, exit_buffer, pos);
-        printf("EXT-%s\n", exit_buffer);
-        printf("SIZEOF-%lu\n", strlen(exit_buffer));
-        fwrite(exit_buffer, sizeof(exit_buffer), 1, ficheiroCod);
-        free(exit_buffer);
+        fwrite(exit_buffer, 1, strlen(exit_buffer), ficheiroCod);
     }
 
+
     array_size=0;
-    char *codes;
-    codes = (char *)malloc(256*256);
     codes[0]='\0';
-    printf("CODESSSS - %s\n", codes);
     int freq_Array[256];
     memset(freq_Array,0,256);
     memset (&nodes, -1 ,256*sizeof(node));
+    exit_buffer[0]='\0';
     char *entry_buffer;
-    entry_buffer = (char *)malloc(total);
+    entry_buffer = (char *)malloc(dist+1);
     dist = 256+distArroba (ficheiroFreq, 0, 0);
     fseek(ficheiroFreq, indexpointer, SEEK_SET);
     char caux = fgetc(ficheiroFreq);
     int counter =0;
     char straux [12];
+    
     
     while ((caux = fgetc(ficheiroFreq))!='@'){
         straux [counter] = caux;
@@ -248,29 +228,23 @@ int main (int argc, char* argv[]){
     }
     straux[counter]='\0';
     size_of_last_block = atoi(straux);
-
     fseek(ficheiroFreq, indexpointer, SEEK_SET);
-    readFreqs(ficheiroFreq, indexpointer , entry_buffer, dist); //256 = distancia ate proxima arroba
+    fread(entry_buffer, sizeof(char), dist, ficheiroFreq);
     indexpointer += dist;
     toStruct (nodes, entry_buffer, n_blocks, freq_Array, pos_freqs);
-    minSort (freq_Array);
 
     for(int f=0; f<256; f++){
             if(freq_Array[f]!=0) array_size++;
     }
-    printf("ARRS-%d\n", array_size);
+
+    minSort (freq_Array, array_size);
         
     char _matrix [NUMBER_OF_FREQ][NUMBER_OF_FREQ] = {'x'};
-    /*
-    for(int i=0; i<NUMBER_OF_FREQ && i<array_size; i++){
-        for(int j=0; j<NUMBER_OF_FREQ && j<array_size-1; j++){
-            printf("MATRIX - %c\n",_matrix[i][j]);
-        }
-    }*/
-    calcular_codigos_SF (freq_Array, codes, _matrix, 0, array_size-1, 0);
+
+    calcular_codigos_SF (freq_Array, _matrix, 0, array_size-1, 0);
 
     char d = ';';
-    int cont=0;
+    cont = 0;
 
     for(int i=0; i<NUMBER_OF_FREQ && i<array_size; i++){
         for(int j=0; j<NUMBER_OF_FREQ && j<array_size-1; j++){
@@ -282,10 +256,10 @@ int main (int argc, char* argv[]){
         codes[cont]=d;
         cont++;
     }
-    printf("CODES- %s\n", codes);
+
     int f,h, g = -1;
     char tmp[256];
-    //for(int g = 0; g<sizeof(freq_Array)/sizeof(freq_Array[0]); g++){
+
     for (int z = 0; z<strlen(codes); z++){
         g++;
         for (int k = 0; k<256; k++){
@@ -298,28 +272,14 @@ int main (int argc, char* argv[]){
                 }
                 z+=h;
                 tmp[h]='\0';
-                printf("TMP-%s\n",tmp);
                 strcpy (nodes[k].code, tmp);
-                printf("Freq - %d\n", nodes[k].freq);
-                printf("Code -%s\n",nodes[k].code);
                 h=0;
                 break;
             }
         }
     }
-    free(codes);  
-        
-    for(int ab=0; ab<256; ab++){
-        if(nodes[ab].init_symbol!=-1){
-            printf("\n\nSymbI - %d\n", nodes[ab].init_symbol);
-            printf("SymbF - %d\n", nodes[ab].final_symbol);
-            printf("Freq - %d\n", nodes[ab].freq);
-            printf("Cod - %s\n", nodes[ab].code);
-        }
-    }
-    free (entry_buffer);
-    char *exit_buffer;
-    exit_buffer = (char *)malloc(total);
+
+    exit_buffer[0]='\0';
     
     strncat (exit_buffer, "@", 1);
     itoa(size_of_last_block,strtemp2);
@@ -329,44 +289,13 @@ int main (int argc, char* argv[]){
     moveToBuffer(nodes, exit_buffer, pos);
     strncat (exit_buffer, "@", 1);
     strncat (exit_buffer, "0", 1);
-    printf("EXITBUFFER-%s\n",exit_buffer);
     fwrite(exit_buffer, 1, strlen(exit_buffer), ficheiroCod);
     free(exit_buffer);
-
-    printf("testAftewhile\n");
+    free (entry_buffer);
     int last_block_size = total - ftell(ficheiroFreq)-1;
-    //dist =  last_block_size + distArroba(ficheiroFreq, last_block_size, 1);
-    //readFreqs(ficheiroFreq, indexpointer , entry_buffer, last_block_size);
-    //printf ("\n\n\n2-%s\n\n\n", entry_buffer);
-    /*
-    indexpointer += 256;
-    temp = fgetc(ficheiroFreq);
-    if (temp == '@'){
-        while (fgetc(ficheiroFreq) != '@'){
-            m++;
-            sprintf(strtemp,"%d", atoi(&temp));
-            strcat (size_of_last_block_string, strtemp);
-        }
-    }
-    printf("testAftewhile2\n");
-    size_of_last_block = atoi(size_of_last_block_string);
-    indexpointer += m;*/
-    /*for (int j=0; i<100;i++){
-        printf("%c", entry_buffer[i]);
-    }*/
-    printf("testAftewhile3\n");
-    //size_of_last_block = fileSize - index - (n_blocks-1 * 256);
-    //readFreqs (ficheiroFreq, indexpointer, entry_buffer, size_of_last_block);
 
-
-    printf("%s\n","abc6");
     fclose (ficheiroFreq);
     fclose (ficheiroCod);
-    printf("%s\n","abc7");
-
-    //FUnção que shano
-    //Função que escreve 
-
 
     printf ("\n\n\nAndré Silva - A87958 , João Nunes - A87972\n");
     printf ("MIEI/CD, 2020\n");
@@ -378,11 +307,6 @@ int main (int argc, char* argv[]){
     printf ("Tempo de execução: \n");
     printf ("Ficheiro gerado: \n");
 
-}
-
-void readFreqs (FILE *freq, int indexPointer, char *buffer, long long block_size){
-
-    fread(buffer, sizeof(char), block_size, freq);
 }
 
 int distArroba (FILE *freq, int size, int x){
@@ -436,11 +360,11 @@ void toStruct (struct node nodes[],char *buffer, long long n_blocos, int *freq_a
     }
 }
 
-void minSort (int *freqArray){
+void minSort (int *freqArray, int array_size){
     int i,j,temp;
 
-    for (i = 0; i <sizeof(freqArray)/(sizeof(freqArray[0])); i++){
-        for (j = i + 1; j < sizeof(freqArray)/(sizeof(freqArray[0])); j++){
+    for (i = 0; i <array_size; i++){
+        for (j = i + 1; j < array_size; j++){
             if(freqArray[i] < freqArray[j]){
                 temp = freqArray[i];
                 freqArray[i] = freqArray[j];
@@ -453,13 +377,9 @@ void minSort (int *freqArray){
 int calcular_melhor_divisao (int *freqArray, int i, int j){
     int div=i, g1=0,total,mindif,dif;
     total=mindif=dif=soma(freqArray,i,j);
-    printf("TOTAL-%d\n",total);
     do{
-        printf("1 VEZ - %s\n", "...");
         g1=g1+freqArray[div];
-        printf ("G1 - %d\n", g1);
         dif=abs(2*g1-total);
-        printf ("DIF - %d\n", dif);
         if (dif<mindif){ 
             div=div+1;
             mindif=dif;
@@ -469,29 +389,16 @@ int calcular_melhor_divisao (int *freqArray, int i, int j){
     return div-1;
  }
 
-void calcular_codigos_SF (int *freqArray, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col){
+void calcular_codigos_SF (int *freqArray, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col){
 
     if (start!=end){
 
-        printf("%s\n","SF");
         int div=calcular_melhor_divisao(freqArray, start, end);
-        printf ("DIV-%d\n",div);
-        add_bit_to_code('0', codes, _matrix, start, div, col);
-        add_bit_to_code('1', codes, _matrix, div+1, end, col);
-        if(start==0){
-            int i,j;
-            char temp;
-            for(j=1;j<strlen(codes); j+=2){
-                for(i=strlen(codes); i>=j; i--){
-                    codes[i]=codes[i-1];
-                }
-                codes[j-1] = ';';
-            }
-        }
-        //printf("\nCODES - %s\n", codes);
+        add_bit_to_code('0',_matrix, start, div, col);
+        add_bit_to_code('1', _matrix, div+1, end, col);
         col++;
-        calcular_codigos_SF(freqArray, codes, _matrix, start, div, col);
-        calcular_codigos_SF(freqArray, codes, _matrix, div+1, end, col);
+        calcular_codigos_SF(freqArray, _matrix, start, div, col);
+        calcular_codigos_SF(freqArray, _matrix, div+1, end, col);
     }
  } 
 
@@ -500,23 +407,16 @@ void calcular_codigos_SF (int *freqArray, char *codes, char _matrix[NUMBER_OF_FR
 
      for (i;i<=j;i+=1){
          if(freqArray[i]==0) break;
-         printf("FRQ-%d\n", freqArray[i]);
          total += freqArray[i];
      }
 
      return total;
  }
 
- void add_bit_to_code (char c, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col){
-     
-     printf("start = %d\n",start);
-     printf("end = %d\n",end);
-     printf("col = %d\n",col);
-     printf("C = %c\n",c);
+ void add_bit_to_code (char c, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col){
 
      for(start; start<=end;start++){
          _matrix[start][col] = c;
-         printf("CHAR-%c\n",_matrix[start][col]);
      }
 
  }
@@ -524,17 +424,17 @@ void calcular_codigos_SF (int *freqArray, char *codes, char _matrix[NUMBER_OF_FR
  void itoa(int n, char s[]){
      int i, sign;
 
-     if ((sign = n) < 0)  /* record sign */
-         n = -n;          /* make n positive */
+     if ((sign = n) < 0) 
+         n = -n;         
      i = 0;
-     do {       /* generate digits in reverse order */
-         s[i++] = n % 10 + '0';   /* get next digit */
-     } while ((n /= 10) > 0);     /* delete it */
+     do {      
+         s[i++] = n % 10 + '0';  
+     } while ((n /= 10) > 0);     
      if (sign < 0)
          s[i++] = '-';
      s[i] = '\0';
      reverse(s);
- } 
+ }
 
  void reverse(char s[]){
      int i, j;
