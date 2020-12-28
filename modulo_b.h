@@ -17,22 +17,28 @@ typedef struct node {
     char code[256]; // 10
 }node;
 
-void readFreqs (FILE *freq, int *indexPointer, char *buffer, long long block_size);
+void readFreqs (FILE *freq, int indexPointer, char *buffer, long long block_size);
 
 int distArroba (FILE *freq, int size, int x);
 
 void toStruct (struct node nodes[], char *buffer, long long n_blocks, int *freq_Array, int pos_freqs);
 
-void minSort (int *freq_Array);
+void minSort (int *freq_Array, int array_size);
 
 int calcular_melhor_divisao (int *freqArray, int i, int j);
 
-void calcular_codigos_SF (int *freqArray, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col);
+void calcular_codigos_SF (int *freqArray, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col);
 
 int soma (int *freqArray, int i, int j);
 
-void add_bit_to_code (char c, char *codes, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col);
+void add_bit_to_code (char c, char _matrix[NUMBER_OF_FREQ][NUMBER_OF_FREQ], int start, int end, int col);
 
-char *add_bit_to_code_AUX(char *codes, int start, int len);
+char *add_bit_to_code_AUX(int start, int len);
+
+void itoa(int n, char s[]);
+
+void reverse(char s[]);
+
+void moveToBuffer(struct node nodes[], char *exitBuffer, int pos);
 
 #endif
