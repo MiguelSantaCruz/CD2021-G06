@@ -9,29 +9,28 @@
 #define CODE_SIZE 16
 #define NUMBER_OF_SYMBOLS 256
 
-//Função que lê o ficheiro .cod e cria uma matriz com os códigos dos simbolos
-void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePointer,int firstTime,int blockIndex);
-
-//Função que lê do ficheiro o bloco e escreve a matriz dos codigos
-void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *index,char* string);
-
-void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]);
-
-void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,FILE *cod,FILE *file,FILE *shaf);
-
 int main(int argc, char *argv[]){
 
-    if(argc<3){
-        printf("O número de argumentos não é correto\nSintaxe: ./shafa -m c (ficheiro a ser comprimido)\n"); 
+    if(argc < 4 || argc > 5){
+        printf("O número de argumentos não é correto\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opcoes]\n"); 
         exit(1);
     }
-    if (strcmp(argv[1],"-m") || strcmp(argv[2],"c")) {
-        printf("Opção desconhecida\nSintaxe: ./shafa -m c (ficheiro a ser comprimido)\n"); 
+    if (strcmp(argv[2],"-m") || strcmp(argv[3],"c")) {
+        printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opcoes]\n");
+        printf("Opções disponiveis:\n - v : verbose mode\n");
         exit(1);
     }
-
-    char fileFilename[strlen(argv[argc-1])+1];    
-    strcpy(fileFilename,argv[argc-1]);
+    int verbose = 0;
+    if (argc == 5) {
+        if (!(strcmp(argv[4],"-v"))) verbose = 1;
+        else {
+            printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opcoes]\n");
+            printf("Opções disponiveis:\n - v : verbose mode\n");
+            exit(1);
+        }
+    }
+    char fileFilename[strlen(argv[1])];    
+    strcpy(fileFilename,argv[1]);
     char codFilename[strlen(fileFilename)+9];
     strcpy(codFilename,fileFilename);
     strcat(codFilename,".cod");
@@ -85,10 +84,14 @@ int main(int argc, char *argv[]){
     printf("Miguel Santa Cruz e Marisa Soares, MIEI/CD, 2020\n");
     printf("Modulo C - Codificação do ficheiro original/RLE\n");
     int firstTime = 1;
+    int fileSize = 0;
+    int *fileSizePointer = &fileSize; 
+    int compressedBlockSize = 0;
+    int *compressedBlockSizePointer = &compressedBlockSize;
 
     //Ler o ficheiro .cod, codificar os blocos e escrever para o ficheiro .shaf
     for (int i = 0; *endFilePointer != 1; i++){
-        readCod(cod,file,shaf,indexPointer,endFilePointer,firstTime,i);
+        readCodFile(cod,file,shaf,indexPointer,endFilePointer,firstTime,i,compressedBlockSizePointer,fileSizePointer,verbose);
         fseek(cod,index,SEEK_SET);
         firstTime = 0;
     }
@@ -96,13 +99,14 @@ int main(int argc, char *argv[]){
     clock_gettime(CLOCK_REALTIME,&t);
     finalTimeSec = t.tv_sec;
     finalTimeNSec = t.tv_nsec;
+    printf("Tamanho do ficheiro comprimido: %d bytes\n",*compressedBlockSizePointer);
+    printf("Tamanho de compressão total: %.1f %%\n",((float)(fileSize-compressedBlockSize)/fileSize)*100);
     printf("Tempo total : %.1f ms\n",(finalTimeSec-initialTimeSec)*1e3+(finalTimeNSec-initialTimeNSec)/1e6);
     printf("Ficheiro de saída: %s\n",shafFilename);
     return 0;
 }
 
-void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePointer,int firstTime,int blockIndex){
-    
+void readCodFile(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePointer,int firstTime,int blockIndex,int* compressedBlockSizePointer,int* fileSizePointer,int verbose){
     //ponteiro para o indíce em que já foi lida a string lida do ficheiro
     int index = *indexPointer;
     
@@ -133,7 +137,7 @@ void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePoint
         if(string[index++]=='N') rOrN = 1; 
 
         //Debugging ---------------------------------------
-        //printf("R(0) ou N(1): %d\n",rOrN);
+        if (verbose) printf("R(0) ou N(1): %d\n",rOrN);
         //-------------------------------------------------
 
         //Ler o número de blocos e guardar no array blockNumber
@@ -144,15 +148,11 @@ void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePoint
         }
         blockNumber = atoi(buffer);
         printf("Número de blocos: %d\n",blockNumber);
-
-        //Debugging ---------------------------------------    
-        //printf("Numero de blocos: %d\n",blockNumber);
-        //-------------------------------------------------
         constant = index+2;
     }
     if(!firstTime) constant = ++index;
+
     //Ler o tamanho do 1º bloco e guardar no array blockSize
-    
     for (int i = 0; i<=CODE_SIZE;i++) buffer[i]='\0';
 
     for (int i = constant; string[i] != '@'; i++){
@@ -161,10 +161,8 @@ void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePoint
     }
     index++;
     blockSize = atoi(buffer);
+    *fileSizePointer += blockSize;
     if(blockSize) printf("Tamanho do %dº bloco: %d bytes\n",blockIndex+1,blockSize);
-    //Debugging ----------------------------------------
-    //printf("Tamanho do bloco: %d\n",blockSize);
-    //--------------------------------------------------
     if (blockSize == 0) {
         *endFilePointer = 1;
         return;
@@ -176,12 +174,12 @@ void readCod(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePoint
     int symbol = 0;
     *indexPointer = index;
     readAndWriteToMatrix(codesMatrix,indexPointer,string);
-    printMatrix(codesMatrix);
-    writeBlockToShaf(codesMatrix,blockSize,blockNumber,firstTime,cod,file,shaf);
+    if (verbose) printMatrix(codesMatrix);
+    writeBlockToShaf(codesMatrix,blockSize,blockNumber,firstTime,compressedBlockSizePointer,cod,file,shaf);
     return;
 }
 
-void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,FILE *cod,FILE *file,FILE *shaf){
+void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,int* compressedBlockSizePointer,FILE *cod,FILE *file,FILE *shaf){
     //buffer de leitura do ficheiro original
     unsigned char buffer[blockSize];
    
@@ -225,8 +223,10 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int bloc
     if (firstTime) sprintf(bufferOut,"@%d@%d@",blockNumber,indexCode);
     else sprintf(bufferOut,"@%d@",indexCode);
     bufferOutIndex = strlen(bufferOut);
+    *compressedBlockSizePointer += bufferOutIndex;
     for(int i = 0; i < 8 ;i++) code[i] = 0;
     printf("Tamanho comprimido: %d bytes\n",indexCode+1);
+    *compressedBlockSizePointer += indexCode;
     printf("Taxa de compressão: %.1f %%\n",((float)(blockSize-(indexCode+1))/blockSize)*100);
     for (int i = bufferOutIndex; i<=CODE_SIZE*blockSize-bufferOutIndex;i++) bufferOut[i]=binaryCodes[i-bufferOutIndex];
     fwrite(bufferOut,1,indexCode+bufferOutIndex,shaf);
@@ -234,6 +234,7 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int bloc
 }
 
 void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]){
+    printf("Matriz --------------------------\n");
     for (int i = 0; i < NUMBER_OF_SYMBOLS; i++)
     {
         if (codesMatrix[i][0]!='\0') {
@@ -245,6 +246,7 @@ void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]){
         printf("\n");
         } 
     }
+    printf("---------------------------------\n");
 }
 
 void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *indexPointer,char* string){
