@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
         exit(1);
     }
     if (strcmp(argv[2],"-m") || strcmp(argv[3],"c")) {
-        printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opcoes]\n");
+        printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opções]\n");
         printf("Opções disponiveis:\n - v : verbose mode\n");
         exit(1);
     }
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]){
     if (argc == 5) {
         if (!(strcmp(argv[4],"-v"))) verbose = 1;
         else {
-            printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opcoes]\n");
+            printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opções]\n");
             printf("Opções disponiveis:\n - v : verbose mode\n");
             exit(1);
         }
@@ -121,9 +121,6 @@ void readCodFile(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFileP
     //Inteiro que guarda a R (0) ou N(1)
     int rOrN = 0;
 
-    //Código do símbolo lido do ficheiro
-    char code[CODE_SIZE+1];
-
     //Matriz dos códigos de cada símbolo
     char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1];
 
@@ -137,7 +134,7 @@ void readCodFile(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFileP
         if(string[index++]=='N') rOrN = 1;
 
         //Debugging ---------------------------------------
-        if (verbose) rOrN ? : printf("Ficheiro RLE\n");
+        if (verbose) rOrN ? printf("Compressão RLE: Não\n") : printf("Compressão RLE: Sim\n");
         //-------------------------------------------------
 
         //Ler o número de blocos e guardar no array blockNumber
@@ -167,37 +164,29 @@ void readCodFile(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFileP
         *endFilePointer = 1;
         return;
     }
-    //Indice da sequencia de bits do simbolo
-    int codeBit = 0;
-
-    //Indice do símbolo na matriz
-    int symbol = 0;
     *indexPointer = index;
     readAndWriteToMatrix(codesMatrix,indexPointer,string);
     if (verbose) printMatrix(codesMatrix);
-    writeBlockToShaf(codesMatrix,blockSize,blockNumber,firstTime,compressedBlockSizePointer,cod,file,shaf);
+    writeBlockToShaf(codesMatrix,blockSize,blockNumber,firstTime,compressedBlockSizePointer,file,shaf);
     return;
 }
 
-void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,int* compressedBlockSizePointer,FILE *cod,FILE *file,FILE *shaf){
+void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,int* compressedBlockSizePointer,FILE *file,FILE *shaf){
     //buffer de leitura do ficheiro original
-    unsigned char buffer[blockSize];
+    char buffer[blockSize];
 
     //Array que contem a codificação binária a escrever no ficheiro .shaf
     //A constante 50 pode ser qualquer valor (espaço para guardar o tamanho do bloco)
-    unsigned char binaryCodes[CODE_SIZE*blockSize];
+    char binaryCodes[CODE_SIZE*blockSize];
 
     //Array para agrupar 8 bits de cada vez para depois guardar no array binaryCodes
-    unsigned char code[9];
+    char code[9];
 
     //Buffer que será escrito no ficheiro (codificação binária + informação sobre os blocos)
-    unsigned char bufferOut[CODE_SIZE*blockSize+50];
+    char bufferOut[CODE_SIZE*blockSize+50];
 
     //Indice de leitura do array code
     int indexCode = 0;
-
-    //Numero de bytes que contem informação sobre o bloco e não o bloco em si
-    int blockInfo = 0;
     indexCode = 0;
     fread(buffer,sizeof(char),blockSize,file);
     //Indice de leitura do array code
@@ -206,17 +195,17 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int bloc
     code[8] = '\0';
     //Escrever para binaryCodes a tradução do ficheiro original
     for (int i = 0; i<blockSize; i++){
-        for (int j = 0; codesMatrix[buffer[i]][j]!='\0'; j++){
+        for (int j = 0; codesMatrix[(unsigned)buffer[i]][j]!='\0'; j++){
             if(n>7) {
                 binaryCodes[indexCode++]= strtol(code,NULL,2);
                 n = 0;
                 }
-            code[n++]=codesMatrix[buffer[i]][j];
+            code[n++]=codesMatrix[(unsigned)buffer[i]][j];
         }
     }
     //Padding
     if(n!=0) {
-        for (n;n<8;n++) code[n] = '0';
+        for (;n<8;n++) code[n] = '0';
         binaryCodes[indexCode++]= strtol(code,NULL,2);
     }
     int bufferOutIndex = 0;
@@ -234,7 +223,7 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int bloc
 }
 
 void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]){
-    printf("Matriz --------------------------\n");
+    printf("Matriz dos códigos---------------\nSímbolo | Código\n");
     for (int i = 0; i < NUMBER_OF_SYMBOLS; i++)
     {
         if (codesMatrix[i][0]!='\0') {
@@ -265,7 +254,7 @@ void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *
         if (codeBit != 0) {
             code[codeBit]='\0';
             int k = 0;
-            for (k; code[k]!='\0'; k++) codesMatrix[symbol][k]=code[k];
+            for (; code[k]!='\0'; k++) codesMatrix[symbol][k]=code[k];
             codesMatrix[symbol][k]='\0';
         } else codesMatrix[symbol][0]='\0';
         symbol++;
