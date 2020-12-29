@@ -83,9 +83,13 @@ int main(int argc, char *argv[]){
 
     printf("Miguel Santa Cruz e Marisa Soares, MIEI/CD, 2020\n");
     printf("Modulo C - Codificação do ficheiro original/RLE\n");
+
+    //Variável que indica se estamos a ler pela primeira vez o ficheiro .cod (Ler informaçao sobre RLE e número de blocos)
     int firstTime = 1;
+    //Tamanho do ficheiro a ser comprimido (acumulador da soma dos tamanhos dos blocos)
     int fileSize = 0;
     int *fileSizePointer = &fileSize;
+    //Tamanho do ficheeiro comprimido (acumulador da soma dos tamanhos dos blocos comprimidos)
     int compressedBlockSize = 0;
     int *compressedBlockSizePointer = &compressedBlockSize;
 
@@ -128,7 +132,9 @@ void readCodFile(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFileP
     fgets(string,READ_SIZE,cod);
     index++;//Salta o primeiro '@'
 
+    //Variavel auxiliar
     int constant;
+
     if(firstTime){
         //Ler a informação ficheiro original/RLE
         if(string[index++]=='N') rOrN = 1;
@@ -149,9 +155,10 @@ void readCodFile(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFileP
     }
     if(!firstTime) constant = ++index;
 
-    //Ler o tamanho do 1º bloco e guardar no array blockSize
+    //Inicializar o buffer
     for (int i = 0; i<=CODE_SIZE;i++) buffer[i]='\0';
-
+    
+    //Ler o tamanho do 1º bloco e guardar no array blockSize
     for (int i = constant; string[i] != '@'; i++){
         buffer[i-constant]=string[i];
         index = i;
@@ -187,28 +194,31 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int bloc
 
     //Indice de leitura do array code
     int indexCode = 0;
-    indexCode = 0;
+
     fread(buffer,sizeof(char),blockSize,file);
+
     //Indice de leitura do array code
-    int n = 0;
+    int codeBit = 0;
     for (int i = 0; i<8;i++) code[i] = 0;
     code[8] = '\0';
     //Escrever para binaryCodes a tradução do ficheiro original
     for (int i = 0; i<blockSize; i++){
         for (int j = 0; codesMatrix[(unsigned)buffer[i]][j]!='\0'; j++){
-            if(n>7) {
+            if(codeBit>7) {
                 binaryCodes[indexCode++]= strtol(code,NULL,2);
-                n = 0;
+                codeBit = 0;
                 }
-            code[n++]=codesMatrix[(unsigned)buffer[i]][j];
+            code[codeBit++]=codesMatrix[(unsigned)buffer[i]][j];
         }
     }
     //Padding
-    if(n!=0) {
-        for (;n<8;n++) code[n] = '0';
+    if(codeBit!=0) {
+        for (;codeBit<8;codeBit++) code[codeBit] = '0';
         binaryCodes[indexCode++]= strtol(code,NULL,2);
     }
+    //Variavel que indica o indice de leitura no array bufferOut
     int bufferOutIndex = 0;
+
     if (firstTime) sprintf(bufferOut,"@%d@%d@",blockNumber,indexCode);
     else sprintf(bufferOut,"@%d@",indexCode);
     bufferOutIndex = strlen(bufferOut);
@@ -239,10 +249,13 @@ void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]){
 }
 
 void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *indexPointer,char* string){
+    //Array que guarda a sequencia de bits correspondente a cada simbolo
     char code[CODE_SIZE+1];
+    //Numero do simbolo
     int symbol = 0;
     int index = *indexPointer;
     int constant = index+1;
+    //Indice de leitura do array code
     int codeBit;
     for (int i = constant; string[i]!='@'; i++){
         codeBit = 0;
