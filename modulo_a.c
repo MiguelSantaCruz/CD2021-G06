@@ -204,3 +204,64 @@ int main (int argc, char *argv []){
 
 }
 
+
+
+
+
+
+
+
+
+
+//codigo interpretador
+
+
+
+void main (int argc, char *argv[]) {
+    clock_t begin = clock();
+    int count;
+    int tamanho;
+    unsigned long size_of_last_block, block_size = tam_b;
+    n_blocks = fsize(f, NULL, &block_size, &size_of_last_block);        //alterar para o caso de receber um -b
+    printf("argc = %d\n", argc);
+
+    if (argc != 7) printf ("ERROR!\nO comando não é valido!\n");
+    else if (strcmp (argv[1], "Shafa") == 0 
+            && strcmp (argv[3], "-m") == 0
+            && strcmp (argv[4], "f") == 0
+            && strcmp (argv[5], "-c") == 0
+            && strcmp (argv[6], "r") == 0) {
+//                ler_ficheiro (argv[2], 20);                 //funçao size que calcula otamanho do ficheiro
+           
+            printf ("José Gonçalves, Maria Gomes, MIEI/CD, 1-jan-2021\n");
+
+
+            printf ("Modulo: f (cálculo das frequências dos símbolos)\n");
+
+
+            printf ("Número de Blocos : %d", n_blocks );                 //falta fazer
+            
+
+            //printf ("Tamanho dos blocos analisados no ficheiro Original: 57444/1620 bytes");
+
+            int tamF = rle ()
+            printf ("Compressão RLE: exemplo.txt.rle (%d  compressão", taxaCompressao (tamI, tamF));
+
+
+            //printf ("Tamanho dos blocos analisados no ficheiro RLE: 57444/1620 bytes");     //falta fazer (usar a fsize)
+            
+            
+            clock_t end = clock();
+            double final = (double)(end - begin) / CLOCKS_PER_SEC;
+            final = (double) final * 1000;
+            printf ("Tempo de execução do módulo (milissegundos): %f\n", final);          //falta fazer
+            
+            
+            //printf ("Ficheiros gerados: %s, %s", ficheiro1, ficheiro2);                     //falta fazer
+            
+
+            printf ("OK\n");
+        }
+}
+
+
