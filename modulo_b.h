@@ -39,6 +39,6 @@ void itoa(int n, char s[]);
 
 void reverse(char s[]);
 
-void moveToBuffer(struct node nodes[], char *exitBuffer, int pos);
+void moveToBuffer(struct node nodes[], char *exitBuffer, int pos, int posmove);
 
 #endif
