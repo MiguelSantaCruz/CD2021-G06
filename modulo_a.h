@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-#define FSIZE_DEFAULT_BLOCK_SIZE 524288         // Default block size = 512 KBytes
-#define FSIZE_MIN_BLOCK_SIZE 512                // Min block size = 512 Bytes
+#define FSIZE_DEFAULT_BLOCK_SIZE 655536        // Default block size = 64 KBytes
+#define FSIZE_MIN_BLOCK_SIZE 1024              // Min block size = 1 KBytes
 #define FSIZE_MAX_BLOCK_SIZE 67108864           // Max block size = 64 MBytes
 #define FSIZE_MAX_NUMBER_OF_BLOCKS 4294967296   // Max number of blocks that can be returned = 2^32 blocks
 #define FSIZE_MAX_SIZE_FSEEK 2147483648         // Max size permitted in fseek/ftell functions = 2 GBytes
@@ -13,7 +14,7 @@
 #define FSIZE_ERROR_IN_FTELL -1L                // Error: When using ftell()
 
 long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_size, long *size_of_last_block)
-{
+{   
     unsigned long long total;
     long long n_blocks;
     unsigned long n_read, block_size;
@@ -39,42 +40,23 @@ long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_s
     fseek_error = fseek(fp, 0L, SEEK_END);
     if (!fseek_error)
     { total = ftell(fp);
-      if (total == FSIZE_ERROR_IN_FTELL) return (FSIZE_ERROR_IN_FILE);
+      if (total == FSIZE_ERROR_IN_FTELL || total < FSIZE_MIN_BLOCK_SIZE) return (FSIZE_ERROR_IN_FILE);
       n_blocks = total/block_size;
+    
       if (n_blocks*block_size == total) *size_of_last_block = block_size;
       else
-      { *size_of_last_block = total - n_blocks*block_size;
-        n_blocks++;
+      { 
+        if (total - n_blocks*block_size < FSIZE_MIN_BLOCK_SIZE){
+          *size_of_last_block = (total - n_blocks*block_size) + block_size;
+          
+        }else{
+          *size_of_last_block = (total - n_blocks*block_size);
+          n_blocks++;
+        }
       }
+      
       return(n_blocks);
     }
-
-    n_blocks = FSIZE_MAX_SIZE_FSEEK/block_size-1; // In reality fseek() can't handle FSIZE_MAX_SIZE_FSEEK of 2GBytes, so let's use a smaller size
-    fseek_error = fseek(fp, n_blocks * block_size, SEEK_SET);
-    if (fseek_error) return (FSIZE_ERROR_IN_FILE);
-
-    temp_buffer = malloc(sizeof(unsigned char)*block_size);
-    do
-    { n_blocks++;
-      n_read = fread(temp_buffer, sizeof(unsigned char), block_size, fp);
-    } while (n_read == block_size && n_blocks <= FSIZE_MAX_NUMBER_OF_BLOCKS);
-
-    free(temp_buffer);
-    if (n_blocks > FSIZE_MAX_NUMBER_OF_BLOCKS) return(FSIZE_ERROR_NUMBER_OF_BLOCKS);
-
-    if (n_read == 0L)
-    { *size_of_last_block = block_size;
-      n_blocks--;
-    }
-    else *size_of_last_block = n_read;
-
-    if (filename == NULL || *filename == 0)
-    { fseek_error = fseek(fp, 0L, SEEK_SET);
-      if (fseek_error) return (FSIZE_ERROR_IN_FILE);
-    }
-    else fclose(fp);
-
-    return(n_blocks);
 }
 
  struct freq_b {
@@ -82,17 +64,20 @@ long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_s
 };
 
 typedef struct {
-    int rle; // se a frequencia vem dum ficheiro rle, rle = 1
+    int rle; // se a frequencia vem dum ficheiro rle, rle = 1    
+    int taxaC;
     int n_blocos;
-    int tam_b [6];
-    int tam_U;
+    int tamBrle [6];//tamanhos dos blocos do rle
+    int tamB;
+    int tamU;//tamanho do ultimo bloco sem rle
+    char nome [30];
+    char nfreq [30];
     struct freq_b * tab;
 }Stack;
 
 
 void escreve_freq (Stack *s, char a []);
-void freq (unsigned char v [], int n, int pB, Stack * s);
+int freq (unsigned char v [], int n, int pB, Stack * s);
 int rle (unsigned char v [], int n,int pB, Stack *s);
 int taxaCompressao (int tam_I,int tam_F);
-void ler_ficheiro (char fic [],unsigned long tam_b, char a []);
-
+int ler_ficheiro (char fic [],unsigned long tam_b, char a [],Stack *s,int r);

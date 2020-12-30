@@ -21,9 +21,9 @@ void readCodFile(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFileP
 void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *index,char* string);
 
 //Função que escreve um bloco traduzido para o ficheiro shaf
-void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,int* compressedBlockSizePointer,FILE *cod,FILE *file,FILE *shaf);
+void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,int* compressedBlockSizePointer,FILE *file,FILE *shaf);
 
 //Função que mostra a matriz no terminal
-void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]);
+void printMatrix(char matrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]);
 
-#endif //__MODULO_C_H__
+#endif
