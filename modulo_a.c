@@ -1,8 +1,10 @@
 #include "modulo_a.h"
 
+// Função que escreve o ficheiro com as frequencias, recebe uma estrura de dados com informação necessárias
+// para escrever o ficheiro e nome do ficheiro 
 void escreve_freq (Stack *s, char a []){
     FILE *f;
-    char or [] = ".freq";
+    char or [] = ".freq";// serve para alterar o nome
     strcat(a,or);
     strcpy(s->nfreq,a);
     f = fopen (a,"w");
@@ -10,16 +12,16 @@ void escreve_freq (Stack *s, char a []){
     if (s->rle) fprintf (f,"@R");
     else fprintf (f,"@N");
 
-    fprintf (f,"@%d",s->n_blocos);
+    fprintf (f,"@%d",s->n_blocos); // escreve o número de blocos
 
     for (int r = 0; r < s->n_blocos -1; r++){
-        if (s->rle == 1) fprintf (f,"@%d@",s->tamBrle[r]);
+        if (s->rle == 1) fprintf (f,"@%d@",s->tamBrle[r]); // escreve o tamanho de cada bloco
         else fprintf (f,"@%d@",s->tamB);
 
-        fprintf (f,"%d;", (s->tab)[r].frequencia[0]);
+        fprintf (f,"%d;", (s->tab)[r].frequencia[0]); // escreve a frequencia do simbolo 0
 
         for(int i=1;i<255;i++) {
-            int ant = (s->tab)[r].frequencia[i-1];
+            int ant = (s->tab)[r].frequencia[i-1]; // comparação entre as frequencias
             int prox = (s->tab)[r].frequencia[i];
             if (prox == ant )fprintf (f,";");
             else fprintf (f,"%d;", (s->tab)[r].frequencia[i]);
@@ -29,8 +31,7 @@ void escreve_freq (Stack *s, char a []){
     if (s->rle == 1) fprintf (f,"@%d@",s->tamBrle[(s->n_blocos) - 1]);
     else fprintf (f,"@%d@",s->tamU);
     
-    fprintf (f,"%d;", (s->tab)[s->n_blocos-1].frequencia[0]);
-
+    fprintf (f,"%d;", (s->tab)[s->n_blocos-1].frequencia[0]); // escreve o último bloco
     for(int i=1;i<255;i++) {
         int ant = (s->tab)[s->n_blocos-1].frequencia[i-1];
         int prox = (s->tab)[s->n_blocos-1].frequencia[i];
@@ -41,72 +42,70 @@ void escreve_freq (Stack *s, char a []){
 }
 
 
-
-int freq (unsigned char v [], int n, int pB, Stack *s){
+// Função para contabilizar a frequencia de cada carater no bloco b e retorna a frequencia do carater 0,
+// útil para o RLE
+int freq (unsigned char *v, int tamBloco, int b, Stack *s){  
     int i, freq = 0,nNull = 0;
-    int fq[256];
-    
+
     for (i = 0; i < 255; i++){
-        
-        for(int p = 0; p < n; p++){
+        for(int p = 0; p < tamBloco; p++){
             if (v[p] == i) freq++;   
         }
-        s->tab[pB].frequencia[i] = freq;
+        s->tab[b].frequencia[i] = freq;
         freq = 0;
     }
-    return nNull = s->tab[pB].frequencia[0]; 
+    return nNull = s->tab[b].frequencia[0]; 
 }
 
-
-int rle (unsigned char v [], int n,int pB, Stack *s){
+// Função que efetua o mecanismo de RLE 
+int rle (unsigned char * v, int tamBloco,int b, Stack *s){
     int contaR = 1;
     
-    for (int i = 0; i < n; i++){
-        if (v[i] == '\0'){
-            int ultp = n-1;
-            for(int g = n+1 ; n-i < g; g--) {
-                v[g] = v[ultp--];
+    for (int i = 0; i < tamBloco; i++){
+        if (v[i] == '\0'){                   // exceção para o carater 0
+            int ultposicao = tamBloco-1;
+            for(int g = tamBloco+1 ; tamBloco-i < g; g--) {
+                v[g] = v[ultposicao--];
             }
-            v[i+1] = v[i];
-            //v[i] = '\0';
+            v[i+1] = v[i]; //v[i] = '\0';
             sprintf(&v[i+2], "%c", contaR);
             i = i + 2;
-            n = n + 2;
+            tamBloco = tamBloco + 2;
         }
-        else {
-            for (int j = i+1; j < n; j++){
+        else {                                  // para qualquer carater que se repita mais de 3
+            for (int j = i+1; j < tamBloco; j++){
                 if (v[i] == v[j]) contaR++;
-                else j = n;    
+                else j = tamBloco;    
             }
             if (contaR >= 4){
                 v[i+1] = v[i];
                 v[i] = '\0';
                 sprintf(&v[i+2], "%c", contaR);
-                for(int a = i+3; a < n; a++) {
+                for(int a = i+3; a < tamBloco; a++) {
                     v[a] = v[a + (contaR-3)];
                 }
                 i = i + 2;
-                n = n - (contaR-3);
+                tamBloco = tamBloco - (contaR-3);
             }
         }
         contaR = 1;
     }
     int freqN = 0;
-    for(int p = 0; p < n; p++){//conta o carater null
+    for(int p = 0; p < tamBloco; p++){          //conta o carater zero
             if (v[p] == '\0') freqN++;
     }
-    s->tab[pB].frequencia[0] += freqN;// fq[i] = freq;
-    return n;
+    s->tab[b].frequencia[0] += freqN;
+    return tamBloco;
 }
 
-
+// Função que indica a rentabilidade do mecanismo de compressão RLE
 int taxaCompressao (int tam_I,int tam_F){
     int r = (tam_I - tam_F)*100;
     r = r/tam_I;
     return r;
 }
 
-
+// Função que ler o ficheiro 
 int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
     FILE *f = fopen(fic,"rb");
     unsigned long long total;
@@ -114,15 +113,12 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
     unsigned long size_of_last_block, block_size = tam_b;
     
     n_blocks = fsize(f, NULL, &block_size, &size_of_last_block);
-    //controlo do tamanho do último bloco
-    if (n_blocks != -3){
+    
+    if (n_blocks != -3){               //controlo do tamanho do ficheiro e do último bloco
         int n = 0;
-        FILE *fp = fopen(fic,"rb");
+        FILE *fp = fopen(fic,"rb"); 
     
-        unsigned char v [block_size*2]; 
-    
-    
-        s->tab = calloc(n_blocks, sizeof(struct freq_b));
+        s->tab = calloc(n_blocks, sizeof(struct freq_bloco)); // incialização da estrutura de dados
         s->rle = 0;
         s->n_blocos = n_blocks;
         s->tamU = size_of_last_block;
@@ -134,32 +130,36 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
             s->tamU = size_of_last_block;
         }
         strcpy (s->nome,"\0"); 
-    
-        n = fread( &v,sizeof(char),block_size,fp);// le só o primeiro bloco
-        int z = freq(v,block_size,0,s);
+        
+        unsigned char * buffer;
+        buffer = malloc(sizeof(unsigned char)*block_size);
+        
+        n = fread(buffer,sizeof(unsigned char),block_size,fp);// le só o primeiro bloco
+        int freqzero = freq(buffer,block_size,0,s);
 
-        int rl = rle(v,block_size,0,s);
+        int rl = rle(buffer,block_size,0,s);
     
         int taxa = taxaCompressao(block_size, rl);
         s->taxaC = taxa; 
         int i;
         if ((taxa >= 0 && taxa < 5) && r == 0){ // não faz o rle
-            s->tab[0].frequencia[0] = z;
+            s->tab[0].frequencia[0] = freqzero;
             for (i = 1; i<= n_blocks - 2; i++){
-                n = fread(&v,sizeof(char),block_size,fp);
-                freq(v,tam_b,i,s);
+                n = fread(buffer,sizeof(unsigned char),block_size,fp);
+                freq(buffer,tam_b,i,s);
             }
         
             if (size_of_last_block != tam_b){
-                n = fread( &v,sizeof(char),size_of_last_block,fp);
-                freq(v,size_of_last_block,i,s);
+                n = fread(buffer,sizeof(unsigned char),size_of_last_block,fp);
+                freq(buffer,size_of_last_block,i,s);
             }
             else {
-                fread(&v,sizeof(char),block_size,fp);
-                freq(v,block_size,i,s);
+                fread(buffer,sizeof(unsigned char),block_size,fp);
+                freq(buffer,block_size,i,s);
             }  
         }
         else {
+            printf("%d\n",rl);
             s->tamBrle[0] = rl;
         
             char or [] = ".rle";
@@ -167,31 +167,32 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
             strcpy(s->nome,a);
             FILE *fw = fopen (a,"wb");
             s->rle = 1;
-            fwrite(&v,sizeof(char),rl,fw);//escreve o .rle
+            fwrite(buffer,sizeof(unsigned char),rl,fw);//escreve o .rle
 
            for (i = 1; i<= n_blocks - 2; i++){
-                n = fread( &v,sizeof(char),block_size,fp);
-                freq(v,block_size,i,s);
-                int t =rle(v,block_size,i,s);
+                n = fread(buffer,sizeof(unsigned char),block_size,fp);
+                freq(buffer,block_size,i,s);
+                int t =rle(buffer,block_size,i,s);
                 s->tamBrle[i] = t;
-                fwrite(&v,sizeof(char),t,fw); 
+                fwrite(buffer,sizeof(unsigned char),t,fw); 
             }
             if (size_of_last_block != block_size){
-                n = fread( &v,sizeof(char),size_of_last_block,fp);
-                freq(v,size_of_last_block,i,s);
-                int t = rle(v,size_of_last_block,i,s);
+                n = fread(buffer,sizeof(unsigned char),size_of_last_block,fp);
+                freq(buffer,size_of_last_block,i,s);
+                int t = rle(buffer,size_of_last_block,i,s);
                 s->tamBrle[n_blocks-1] = t;
-                fwrite(&v,sizeof(char),t,fw); 
+                fwrite(buffer,sizeof(unsigned char),t,fw); 
             }
             else {
-                n = fread( &v,sizeof(char),size_of_last_block,fp);
-                freq(v,tam_b,i,s);
-                int t = rle(v,block_size,i,s);
+                n = fread(buffer,sizeof(unsigned char),size_of_last_block,fp);
+                freq(buffer,block_size,i,s);
+                int t = rle(buffer,block_size,i,s);
                 s->tamBrle[n_blocks-1] = t;
-                fwrite(&v,sizeof(char),t,fw); 
+                fwrite(buffer,sizeof(unsigned char),t,fw); 
             }
         }  
         escreve_freq(s,a);
+        free(buffer);
     }
     else {
         printf("Erro tamanho minimo do ficheiro não atingido\n\n");
