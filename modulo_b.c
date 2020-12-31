@@ -20,9 +20,11 @@ int main (int argc, char* argv[]){
         exit(4);
     }
 
-    char fileName[strlen(argv[1])+1];
+    int len=0;
+    len = strlen(argv[1]+1);
+    char fileName[len];
     strcpy(fileName,argv[1]);
-    char codeFileName[strlen(fileName)];
+    char codeFileName[len+1];
     int y;
 
     for(y=0; y<strlen(fileName)-4;y++){ //Guardar nome do ficheiro dado na string que tem o nome do ficheiro de saida
