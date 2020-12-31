@@ -19,9 +19,9 @@ typedef struct node {
 
 void readFreqs (FILE *freq, int indexPointer, char *buffer, long long block_size);
 
-int distArroba (FILE *freq, int size, int x);
+int distArroba (FILE *freq);
 
-void toStruct (struct node nodes[], char *buffer, long long n_blocks, int *freq_Array, int pos_freqs);
+void toStruct (struct node nodes[], char *buffer, int *freq_Array, int pos_freqs);
 
 void minSort (int *freq_Array, int array_size);
 
@@ -39,6 +39,6 @@ void itoa(int n, char s[]);
 
 void reverse(char s[]);
 
-void moveToBuffer(struct node nodes[], char *exitBuffer, int pos, int posmove);
+void moveToBuffer(struct node nodes[], char *exitBuffer, int posmove);
 
 #endif
