@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#define FSIZE_DEFAULT_BLOCK_SIZE 655536        // Default block size = 64 KBytes
+#define FSIZE_DEFAULT_BLOCK_SIZE 65536        // Default block size = 64 KBytes
 #define FSIZE_MIN_BLOCK_SIZE 1024              // Min block size = 1 KBytes
 #define FSIZE_MAX_BLOCK_SIZE 67108864           // Max block size = 64 MBytes
 #define FSIZE_MAX_NUMBER_OF_BLOCKS 4294967296   // Max number of blocks that can be returned = 2^32 blocks
@@ -59,7 +59,7 @@ long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_s
     }
 }
 
- struct freq_b {
+ struct freq_bloco {
     int frequencia [256];
 };
 
@@ -67,17 +67,17 @@ typedef struct {
     int rle; // se a frequencia vem dum ficheiro rle, rle = 1    
     int taxaC;
     int n_blocos;
-    int tamBrle [6];//tamanhos dos blocos do rle
-    int tamB;
+    int tamBrle [100];//tamanhos dos blocos do rle
+    int tamB;//tamanho do primeiro bloco sem rle
     int tamU;//tamanho do ultimo bloco sem rle
-    char nome [30];
-    char nfreq [30];
-    struct freq_b * tab;
+    char nome [50];
+    char nfreq [54];
+    struct freq_bloco * tab;
 }Stack;
 
 
 void escreve_freq (Stack *s, char a []);
-int freq (unsigned char v [], int n, int pB, Stack * s);
-int rle (unsigned char v [], int n,int pB, Stack *s);
-int taxaCompressao (int tam_I,int tam_F);
+void freq (unsigned char v [], unsigned long tamBloco, int b, Stack * s);
+unsigned long rle (unsigned char v [], unsigned long tambloco);
+int taxaCompressao (unsigned long tam_I,unsigned long tam_F);
 int ler_ficheiro (char fic [],unsigned long tam_b, char a [],Stack *s,int r);
