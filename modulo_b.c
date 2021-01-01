@@ -31,7 +31,7 @@ int main (int argc, char* argv[]){
         codeFileName[y] = fileName[y];
     }
     codeFileName[y]='\0';
-    
+    printf("fileName %s\n", fileName);
     FILE * ficheiroFreq; 
     ficheiroFreq = fopen (fileName, "rb"); //Abrir o ficheiro recebido
     if (ficheiroFreq == NULL){
@@ -113,9 +113,9 @@ int main (int argc, char* argv[]){
     codes = (char *)malloc(256*256);
     int cont;
 
+    strcat(codeFileName, "cod");
     FILE * ficheiroCod;
     ficheiroCod = fopen (codeFileName, "wb"); //Abertura do ficheiro de saida
-    strcat(codeFileName, "cod");
     
     if (ficheiroCod == NULL){
         printf ("ERRO: Erro ao abrir o ficheiro!\n");
@@ -201,6 +201,7 @@ int main (int argc, char* argv[]){
 
         moveToBuffer(nodes, exit_buffer, posmove); //Função que le os dados da struct e constroi o buffer de saida 
         fwrite(exit_buffer, 1, strlen(exit_buffer), ficheiroCod); //Função que escreve no ficheiro de saida os dados do buffer
+        free(entry_buffer);
     }
 
     //Codigo referente ao ultimo bloco, ou primeiro caso so haja 1 bloco
@@ -211,13 +212,13 @@ int main (int argc, char* argv[]){
     memset (&nodes, -1 ,256*sizeof(node));
     exit_buffer[0]='\0';
     char *entry_buffer;
-    entry_buffer = (char *)malloc(dist+1);
+    entry_buffer = (char *)malloc(dist+5);
     dist = 256+distArroba (ficheiroFreq); //Distancia ate ao fim do bloco
     fseek(ficheiroFreq, indexpointer, SEEK_SET);
     char caux = fgetc(ficheiroFreq);
     int counter =0;
     char straux [12];
-    
+
     while ((caux = fgetc(ficheiroFreq))!='@'){
         straux [counter] = caux;
         counter++; 
@@ -228,6 +229,7 @@ int main (int argc, char* argv[]){
     fseek(ficheiroFreq, indexpointer, SEEK_SET);
     fread(entry_buffer, sizeof(char), dist, ficheiroFreq); //Função que le do ficheio para o buffer
     indexpointer += dist;
+
     toStruct (nodes, entry_buffer, freq_Array, pos_freqs); //Passar os dados do buffer para uma struct de modo a organizar os dados
 
     for(int f=0; f<256; f++){ //Calculo do tamanho do array de frequencias (numero de simbolos)
@@ -235,7 +237,6 @@ int main (int argc, char* argv[]){
     }
 
     minSort (freq_Array, array_size); //Função que ordena com ordem decrescente as frequencias
-        
     char _matrix [NUMBER_OF_FREQ][NUMBER_OF_FREQ] = {'x'};
 
     calcular_codigos_SF (freq_Array, _matrix, 0, array_size-1, 0); //Função que calcula os codigos Shanon-Fano
@@ -299,7 +300,7 @@ int main (int argc, char* argv[]){
     strncat (exit_buffer, "@", 1);
 
     moveToBuffer(nodes, exit_buffer, posmove); //Função que le os dados da struct e constroi o buffer de saida 
-
+    //printf("ERRO1\n");
     strncat (exit_buffer, "@", 1);
     strncat (exit_buffer, "0", 1); //AAdicionar '0' que significa fim do ficheiro
     fwrite(exit_buffer, 1, strlen(exit_buffer), ficheiroCod); //Função que escreve no ficheiro de saida os dados do buffer
@@ -349,6 +350,7 @@ void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs)
     char str[20];
     int counter=0;
     int counter2=0;
+    //printf("BUFF-%s\n",buffer);
 
     while(j<strlen(buffer)){
         if (buffer[j] != ';'){
@@ -360,6 +362,7 @@ void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs)
                 while (buffer[j] != ';'){
                     c = buffer[j];
                     strncat(str,&c,1);
+                    //printf("STRL %s\n", str);
                     j++;
                 }
                 strcpy(nodes[i].code, "x");
@@ -400,7 +403,7 @@ int calcular_melhor_divisao (int *freqArray, int i, int j){ //Funçao que calcul
             mindif=dif;
         }
         else dif=mindif+1;
-    } while (dif!=mindif);
+    } while (dif==mindif);
     return div-1;
  }
 
