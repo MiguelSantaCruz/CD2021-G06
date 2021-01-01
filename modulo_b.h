@@ -6,9 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
-#include "modulo_a.h"
-#include "modulo_c.h"
-#include "modulo_d.h"
+
 
 typedef struct node {
     int init_symbol; //109

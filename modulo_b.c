@@ -31,7 +31,7 @@ int main (int argc, char* argv[]){
         codeFileName[y] = fileName[y];
     }
     codeFileName[y]='\0';
-    printf("fileName %s\n", fileName);
+
     FILE * ficheiroFreq; 
     ficheiroFreq = fopen (fileName, "rb"); //Abrir o ficheiro recebido
     if (ficheiroFreq == NULL){
@@ -83,6 +83,7 @@ int main (int argc, char* argv[]){
             str_aux[count]='\0';
             strcat(n_blocks_s,str_aux);
             arrobas++;
+            index+=count;
         }
         if (arrobas == 4){
             break;
@@ -91,13 +92,12 @@ int main (int argc, char* argv[]){
 
     int nb=atoi(n_blocks_s);
     n_blocks = nb;
-    int pos_freqs = index-2;
+    int pos_freqs = index-3-strlen(n_blocks_s);
     int posmove = index +1;
     index = index-k-1;
     fseek(ficheiroFreq, index, SEEK_SET);
 
     block_size = atoi(c_block_size);
-    free(c_block_size);
     
     int i = 0;
     int dist = 0;
@@ -123,6 +123,7 @@ int main (int argc, char* argv[]){
     }
 
     while (i<n_blocks-1){ //Ciclo que corre para os blocos que tem tamanho igual
+
         exit_buffer[0]='\0'; //Reset de varias variaveis usadas durante o ciclo
         codes[0] = '\0';
         char _matrix [NUMBER_OF_FREQ][NUMBER_OF_FREQ] = {'x'};
@@ -135,10 +136,12 @@ int main (int argc, char* argv[]){
         entry_buffer = (char *)malloc(dist+1);
         fseek(ficheiroFreq, indexpointer, SEEK_SET);
         fread(entry_buffer, sizeof(char), dist, ficheiroFreq); //Leitura de um bloco do ficheiro para o buffer
+        entry_buffer[dist]='\0';
         i++;
         indexpointer += dist;
         toStruct (nodes, entry_buffer, freq_Array, pos_freqs); //Passar os dados do buffer para uma struct de modo a organizar os dados
 
+        pos_freqs = strlen(c_block_size)+2;
         for(int f=0; f<256; f++){ //Calculo do tamanho do array de frequencias (numero de simbolos)
             if(freq_Array[f]!=0) array_size++;
         }
@@ -226,10 +229,11 @@ int main (int argc, char* argv[]){
 
     straux[counter]='\0';
     size_of_last_block = atoi(straux);
+    pos_freqs = strlen(straux)+2;
     fseek(ficheiroFreq, indexpointer, SEEK_SET);
     fread(entry_buffer, sizeof(char), dist, ficheiroFreq); //Função que le do ficheio para o buffer
+    entry_buffer[dist]='\0';
     indexpointer += dist;
-
     toStruct (nodes, entry_buffer, freq_Array, pos_freqs); //Passar os dados do buffer para uma struct de modo a organizar os dados
 
     for(int f=0; f<256; f++){ //Calculo do tamanho do array de frequencias (numero de simbolos)
@@ -300,11 +304,12 @@ int main (int argc, char* argv[]){
     strncat (exit_buffer, "@", 1);
 
     moveToBuffer(nodes, exit_buffer, posmove); //Função que le os dados da struct e constroi o buffer de saida 
-    //printf("ERRO1\n");
+
     strncat (exit_buffer, "@", 1);
     strncat (exit_buffer, "0", 1); //AAdicionar '0' que significa fim do ficheiro
     fwrite(exit_buffer, 1, strlen(exit_buffer), ficheiroCod); //Função que escreve no ficheiro de saida os dados do buffer
     free (entry_buffer);
+    free(c_block_size);
 
     fclose (ficheiroFreq);
     fclose (ficheiroCod);
@@ -350,7 +355,6 @@ void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs)
     char str[20];
     int counter=0;
     int counter2=0;
-    //printf("BUFF-%s\n",buffer);
 
     while(j<strlen(buffer)){
         if (buffer[j] != ';'){
@@ -359,10 +363,9 @@ void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs)
             }
             if (buffer[j]!= '0'){
                 nodes[i].init_symbol = j+3-counter;
-                while (buffer[j] != ';'){
+                while (buffer[j] != ';' && j<strlen(buffer)){
                     c = buffer[j];
                     strncat(str,&c,1);
-                    //printf("STRL %s\n", str);
                     j++;
                 }
                 strcpy(nodes[i].code, "x");
@@ -438,28 +441,32 @@ void calcular_codigos_SF (int *freqArray, char _matrix[NUMBER_OF_FREQ][NUMBER_OF
  }
 
  void itoa(int n, char s[]){ //Função de conversão de int para string
-     int i, sign;
+     int i=0, n_aux;
 
-     if ((sign = n) < 0) 
-         n = -n;         
-     i = 0;
-     do {      
-         s[i++] = n % 10 + '0';  
-     } while ((n /= 10) > 0);     
-     if (sign < 0)
+     if ((n_aux = n) < 0){
+         n = -n;
+     } 
+
+     do {
+         s[i++] = n % 10 + '0';
+     } while ((n /= 10) > 0);
+
+     if (n_aux < 0){
          s[i++] = '-';
+     }
+
      s[i] = '\0';
      reverse(s);
  }
 
  void reverse(char s[]){ //Função auxiliar da itoa que inverte uma string
      int i, j;
-     char c;
+     char aux;
 
-     for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
-         c = s[i];
+     for (i = 0, j = strlen(s)-1; i<j; i++, j--){
+         aux = s[i];
          s[i] = s[j];
-         s[j] = c;
+         s[j] = aux;
      }
  } 
 
@@ -480,7 +487,9 @@ void calcular_codigos_SF (int *freqArray, char _matrix[NUMBER_OF_FREQ][NUMBER_OF
             strcat(exitBuffer, nodes[i].code);
             k+=strlen(nodes[i].code);
             counter2+=strlen(nodes[i].code)-(nodes[i].final_symbol - nodes[i].init_symbol+1);
-            strncat(exitBuffer, ";", 1);
+            if(counter!=255){
+                strncat(exitBuffer, ";", 1);
+            }
             counter++;
             k++;
             if ((nodes[i].final_symbol - nodes[i].init_symbol+1)>strlen(nodes[i].code)){
