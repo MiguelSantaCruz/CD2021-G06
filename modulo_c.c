@@ -1,214 +1,133 @@
+#include "modulo_c.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "modulo_c.h"
-
-#define READ_SIZE 4081
-#define BUF_SIZE 17
-#define CODE_SIZE 16
-#define NUMBER_OF_SYMBOLS 256
 
 int main(int argc, char *argv[]){
+    positionIndicator posIndicator = malloc(sizeof(struct positionIndicator));
+    posIndicator->codIndex = 0;
+    posIndicator->fileIndex = 0;
 
-    if(argc < 4 || argc > 5){
-        printf("O número de argumentos não é correto\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opcoes]\n");
-        exit(1);
-    }
-    if (strcmp(argv[2],"-m") || strcmp(argv[3],"c")) {
-        printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opções]\n");
-        printf("Opções disponiveis:\n - v : verbose mode\n");
-        exit(1);
-    }
-    int verbose = 0;
-    if (argc == 5) {
-        if (!(strcmp(argv[4],"-v"))) verbose = 1;
-        else {
-            printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opções]\n");
-            printf("Opções disponiveis:\n - v : verbose mode\n");
-            exit(1);
-        }
-    }
-    char fileFilename[strlen(argv[1])];
-    strcpy(fileFilename,argv[1]);
-    char codFilename[strlen(fileFilename)+9];
-    strcpy(codFilename,fileFilename);
-    strcat(codFilename,".cod");
+    fileData fData = malloc(sizeof(struct fileData));
+    initializeStructs(&fData,&posIndicator); 
+    commandLine(argc,argv,&fData);
 
-    //Indice que guarda a posição lida no ficheiro .cod
-    int index = 0;
+    //Variaveis que guardam o tempo do clock
+    struct timespec initialTime;
+    struct timespec finalTime;
+    clock_gettime(CLOCK_REALTIME,&initialTime);
 
-    //Bool que diz se o ficheiro .cod chegou ao fim
-    int endFile = 0;
-
-    //Apontador para o o bool endFile
-    int *endFilePointer = &endFile;
-
-    //Apontador para a a variavel index
-    int *indexPointer = &index;
-
-    //Variavel que guarda o tempo do clock
-    struct timespec t;
-
-    clock_gettime(CLOCK_REALTIME,&t);
-
-    //Parte inteira em segundos do tempo inicial
-    int initialTimeSec = t.tv_sec;
-
-    //Parte decimal do tempo inicial em nanossegundos
-    int initialTimeNSec = t.tv_nsec;
-
-    //Parte inteira em segundos do tempo inicial
-    int finalTimeSec;
-
-    //Parte decimal do tempo inicial em nanossegundos
-    int finalTimeNSec;
-
-    FILE *file = fopen(fileFilename,"r");
-    FILE *cod = fopen(codFilename,"r");
-
-    if(file == NULL) {
-        printf ("Erro: Ficheiro original inexistente!\n");
-        exit(2);
-    }
-    if(cod == NULL){
-        printf ("Erro : Ficheiro .cod inexistente!\n");
-        exit(3);
-    }
-
-    char shafFilename[strlen(fileFilename)+6];
-    strcpy(shafFilename,fileFilename);
-
-    FILE *shaf = fopen(strcat(shafFilename,".shaf"),"w");
-
-    printf("Miguel Santa Cruz e Marisa Soares, MIEI/CD, 2020\n");
-    printf("Modulo C - Codificação do ficheiro original/RLE\n");
-
-    //Variável que indica se estamos a ler pela primeira vez o ficheiro .cod (Ler informaçao sobre RLE e número de blocos)
-    int firstTime = 1;
-    //Tamanho do ficheiro a ser comprimido (acumulador da soma dos tamanhos dos blocos)
-    int fileSize = 0;
-    int *fileSizePointer = &fileSize;
-    //Tamanho do ficheeiro comprimido (acumulador da soma dos tamanhos dos blocos comprimidos)
-    int compressedBlockSize = 0;
-    int *compressedBlockSizePointer = &compressedBlockSize;
-
+    //char* codBuffer = malloc((READ_SIZE*sizeof(char))+1);
+    char codBuffer[READ_SIZE+1];
+    fread(codBuffer,sizeof(char),READ_SIZE,fData->cod);
     //Ler o ficheiro .cod, codificar os blocos e escrever para o ficheiro .shaf
-    for (int i = 0; *endFilePointer != 1; i++){
-        readCodFile(cod,file,shaf,indexPointer,endFilePointer,firstTime,i,compressedBlockSizePointer,fileSizePointer,verbose);
-        fseek(cod,index,SEEK_SET);
-        firstTime = 0;
-    }
-
-    clock_gettime(CLOCK_REALTIME,&t);
-    finalTimeSec = t.tv_sec;
-    finalTimeNSec = t.tv_nsec;
-    printf("Tamanho do ficheiro comprimido: %d bytes\n",*compressedBlockSizePointer);
-    printf("Tamanho de compressão total: %.1f %%\n",((float)(fileSize-compressedBlockSize)/fileSize)*100);
-    printf("Tempo total : %.1f ms\n",(finalTimeSec-initialTimeSec)*1e3+(finalTimeNSec-initialTimeNSec)/1e6);
-    printf("Ficheiro de saída: %s\n",shafFilename);
+    for (int i = 0; fData->endOfFile != 1 && (fData->blockIndex < fData->blockNumber); i++) readCodFile(codBuffer,&posIndicator,&fData);
+    clock_gettime(CLOCK_REALTIME,&finalTime);
+    printRunDetails(&fData,&initialTime,&finalTime);
+    fclose(fData->cod);
+    fclose(fData->file);
+    fclose(fData->shaf);
     return 0;
 }
 
-void readCodFile(FILE *cod,FILE *file,FILE* shaf,int *indexPointer,int *endFilePointer,int firstTime,int blockIndex,int* compressedBlockSizePointer,int* fileSizePointer,int verbose){
-    //ponteiro para o indíce em que já foi lida a string lida do ficheiro
-    int index = *indexPointer;
-
-    //String que contem 4080 bytes lidos do ficheiro .cod
-    char string[READ_SIZE];
-
-    //Buffer que contem informaçao aleatória
-    char buffer[BUF_SIZE];
-
-    int blockNumber,blockSize;
-
-    //Inteiro que guarda a R (0) ou N(1)
-    int rOrN = 0;
-
+void readCodFile(char* buffer,positionIndicator* posIndicator,fileData* fData){
     //Matriz dos códigos de cada símbolo
-    char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1];
-
-    //Obter os primeiros READ_SIZE bytes do ficheiro
-    fgets(string,READ_SIZE,cod);
-    index++;//Salta o primeiro '@'
-
-    //Variavel auxiliar
-    int constant;
-
-    if(firstTime){
-        //Ler a informação ficheiro original/RLE
-        if(string[index++]=='N') rOrN = 1;
-
-        //Debugging ---------------------------------------
-        if (verbose) rOrN ? printf("Compressão RLE: Não\n") : printf("Compressão RLE: Sim\n");
-        //-------------------------------------------------
-
-        //Ler o número de blocos e guardar no array blockNumber
-        constant = index+1;
-        for (int i = constant; string[i]!='@'; i++){
-            buffer[i-constant] = string[i];
-            index = i;
-        }
-        blockNumber = atoi(buffer);
-        printf("Número de blocos: %d\n",blockNumber);
-        constant = index+2;
-    }
-    if(!firstTime) constant = ++index;
-
-    //Inicializar o buffer
-    for (int i = 0; i<=CODE_SIZE;i++) buffer[i]='\0';
-    
-    //Ler o tamanho do 1º bloco e guardar no array blockSize
-    for (int i = constant; string[i] != '@'; i++){
-        buffer[i-constant]=string[i];
-        index = i;
-    }
-    index++;
-    blockSize = atoi(buffer);
-    *fileSizePointer += blockSize;
-    if(blockSize) printf("Tamanho do %dº bloco: %d bytes\n",blockIndex+1,blockSize);
-    if (blockSize == 0) {
-        *endFilePointer = 1;
-        return;
-    }
-    *indexPointer = index;
-    readAndWriteToMatrix(codesMatrix,indexPointer,string);
-    if (verbose) printMatrix(codesMatrix);
-    writeBlockToShaf(codesMatrix,blockSize,blockNumber,firstTime,compressedBlockSizePointer,file,shaf);
+    char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1];
+    readToBufferIfNeeded(fData,posIndicator,buffer);
+    //if ((*fData)->blockIndex > (*fData)->blockNumber) return;
+    readFileandBlocksInfo(posIndicator,fData,buffer);
+    readAndWriteToMatrix(codesMatrix,fData,posIndicator,buffer);
+    if ((*fData)->verbose) printMatrix(codesMatrix);
+    (*posIndicator)->codIndex--;
+    writeBlockToShaf(codesMatrix,fData);
     return;
 }
 
-void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int blockSize,int blockNumber,int firstTime,int* compressedBlockSizePointer,FILE *file,FILE *shaf){
+void readFileandBlocksInfo(positionIndicator* posIndicator,fileData* fData,char* buffer){
+    //Buffer que guarda informação temporária
+    char tempBuffer[BUF_SIZE];
+    (*fData)->blockIndex++;
+    (*posIndicator)->codIndex++; //Salta o primeiro '@'
+    if((*fData)->firstTime){
+         (*fData)->blockIndex = 1;
+        readToBufferIfNeeded(fData,posIndicator,buffer);
+        //Ler a informação ficheiro original/RLE
+        if(buffer[(*posIndicator)->codIndex++]=='N') (*fData)->rOrN = 1;
+        if ((*fData)->verbose) (*fData)->rOrN ? printf("Compressão RLE: Não\n") : printf("Compressão RLE: Sim\n");
+        //Ler o número de blocos e guardar no array blockNumber
+        for (int i = ++((*posIndicator)->codIndex); buffer[i]!='@'; i++){
+            readToBufferIfNeeded(fData,posIndicator,buffer);
+            tempBuffer[i-((*posIndicator)->codIndex)] = buffer[i];
+            (*posIndicator)->codIndex = i;
+        }
+        (*fData)->blockNumber = atoi(tempBuffer);
+        printf("Número de blocos: %d\n",(*fData)->blockNumber);
+        printf("-------------------------------------------\n");
+    }
+    //Reiniciar buffer
+    for (int i = 0; i<=CODE_SIZE;i++) tempBuffer[i]='\0';
+    //Ler o tamanho do 1º bloco e guardar no array blockSize
+    readToBufferIfNeeded(fData,posIndicator,buffer);
+    (*posIndicator)->codIndex+=2;
+    int index = 0;
+    for (int i = (*posIndicator)->codIndex; buffer[i] != '@' && buffer[i] != '\0'; i++){
+        if(readToBufferIfNeeded(fData,posIndicator,buffer)) i = 0;
+        tempBuffer[index++]=buffer[i];
+        if (index>BUF_SIZE) printError(-5);
+        (*posIndicator)->codIndex = i;
+    }
+    if((*fData)->endOfFile) return;
+    (*posIndicator)->codIndex++;
+    (*fData)->blockSize = atoi(tempBuffer);
+    (*fData)->fileSize += (*fData)->blockSize;
+    if((*fData)->blockSize) printf("Tamanho do %dº bloco: %d bytes\n",(*fData)->blockIndex,(*fData)->blockSize);
+    if (!(*fData)->blockSize) (*fData)->endOfFile = 1;
+    return;
+}
+
+int readToBufferIfNeeded(fileData* fData,positionIndicator* posIndicator,char* buffer){
+    int refreshNeed = 0;
+    if((*posIndicator)->codIndex >= READ_SIZE){
+        if(!feof((*fData)->cod))fread(buffer,sizeof(char),READ_SIZE,(*fData)->cod);
+        else (*fData)->endOfFile = 1;
+        (*posIndicator)->codIndex = 0;
+        refreshNeed = 1;
+    }
+    return refreshNeed;
+}
+
+void writeBlockToShaf(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1],fileData* fData){
     //buffer de leitura do ficheiro original
-    char buffer[blockSize];
+    char* buffer = (char*) malloc(((*fData)->blockSize+1)*sizeof(char));
 
     //Array que contem a codificação binária a escrever no ficheiro .shaf
     //A constante 50 pode ser qualquer valor (espaço para guardar o tamanho do bloco)
-    char binaryCodes[CODE_SIZE*blockSize];
+    char* binaryCodes = (char* ) malloc((CODE_SIZE*(*fData)->blockSize)*sizeof(char));
 
     //Array para agrupar 8 bits de cada vez para depois guardar no array binaryCodes
     char code[9];
 
     //Buffer que será escrito no ficheiro (codificação binária + informação sobre os blocos)
-    char bufferOut[CODE_SIZE*blockSize+50];
+    char* bufferOut = (char* )malloc((CODE_SIZE*(*fData)->blockSize)*sizeof(char));
 
     //Indice de leitura do array code
     int indexCode = 0;
 
-    fread(buffer,sizeof(char),blockSize,file);
+    fread(buffer,sizeof(char),(*fData)->blockSize,(*fData)->file);
 
     //Indice de leitura do array code
     int codeBit = 0;
     for (int i = 0; i<8;i++) code[i] = 0;
     code[8] = '\0';
     //Escrever para binaryCodes a tradução do ficheiro original
-    for (int i = 0; i<blockSize; i++){
-        for (int j = 0; codesMatrix[(unsigned)buffer[i]][j]!='\0'; j++){
+    for (int i = 0; i<(*fData)->blockSize; i++){
+        for (int j = 0; codesMatrix[buffer[i]][j]!='\0'; j++){
             if(codeBit>7) {
                 binaryCodes[indexCode++]= strtol(code,NULL,2);
                 codeBit = 0;
                 }
-            code[codeBit++]=codesMatrix[(unsigned)buffer[i]][j];
+            code[codeBit++]=codesMatrix[buffer[i]][j];
         }
     }
     //Padding
@@ -219,60 +138,154 @@ void writeBlockToShaf (char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int bloc
     //Variavel que indica o indice de leitura no array bufferOut
     int bufferOutIndex = 0;
 
-    if (firstTime) sprintf(bufferOut,"@%d@%d@",blockNumber,indexCode);
+    if ((*fData)->firstTime) sprintf(bufferOut,"@%d@%d@",(*fData)->blockNumber,indexCode);
     else sprintf(bufferOut,"@%d@",indexCode);
+    (*fData)->firstTime = 0;
     bufferOutIndex = strlen(bufferOut);
-    *compressedBlockSizePointer += bufferOutIndex;
+    (*fData)->compressedFileSize += bufferOutIndex;
     for(int i = 0; i < 8 ;i++) code[i] = 0;
-    printf("Tamanho comprimido: %d bytes\n",indexCode+1);
-    *compressedBlockSizePointer += indexCode;
-    printf("Taxa de compressão: %.1f %%\n",((float)(blockSize-(indexCode+1))/blockSize)*100);
-    for (int i = bufferOutIndex; i<=CODE_SIZE*blockSize-bufferOutIndex;i++) bufferOut[i]=binaryCodes[i-bufferOutIndex];
-    fwrite(bufferOut,1,indexCode+bufferOutIndex,shaf);
+    printf("Tamanho do bloco comprimido: %d bytes\n",indexCode+1);
+    (*fData)->compressedFileSize  += indexCode;
+    printf("Taxa de compressão: %.1f %%\n",((float)((*fData)->blockSize-(indexCode+1))/(*fData)->blockSize)*100);
+    for (int i = bufferOutIndex; i<=CODE_SIZE*((*fData)->blockSize-bufferOutIndex);i++) bufferOut[i]=binaryCodes[i-bufferOutIndex];
+    fwrite(bufferOut,1,indexCode+bufferOutIndex,(*fData)->shaf);
+    printf("-------------------------------------------\n");
+    free(binaryCodes);
+    free(buffer);
+    free(bufferOut);
     return;
 }
 
-void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1]){
-    printf("Matriz dos códigos---------------\nSímbolo | Código\n");
-    for (int i = 0; i < NUMBER_OF_SYMBOLS; i++)
-    {
+
+void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1]){
+    printf("Matriz dos códigos:\nSímbolo | Código\n");
+    for (int i = 0; i < NUMBER_OF_SYMBOLS; i++) {
         if (codesMatrix[i][0]!='\0') {
             printf("%d: ",i);
-            for (int j = 0; codesMatrix[i][j]!='\0'; j++)
-            {
-                printf("%c",codesMatrix[i][j]);
-            }
+            for (int j = 0; codesMatrix[i][j]!='\0'; j++) printf("%c",codesMatrix[i][j]);
         printf("\n");
         }
     }
-    printf("---------------------------------\n");
 }
 
-void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS][CODE_SIZE+1],int *indexPointer,char* string){
+void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1],fileData* fData,positionIndicator* posIndicator,char* buffer){
     //Array que guarda a sequencia de bits correspondente a cada simbolo
-    char code[CODE_SIZE+1];
+    char* code = malloc((CODE_SIZE+1)*sizeof(char));
     //Numero do simbolo
     int symbol = 0;
-    int index = *indexPointer;
-    int constant = index+1;
     //Indice de leitura do array code
-    int codeBit;
-    for (int i = constant; string[i]!='@'; i++){
-        codeBit = 0;
-        for (int j = 0; string[i]!=';'; j++){
-            code[j]=string[i];
+    int codeBit = 0;
+    readToBufferIfNeeded(fData,posIndicator,buffer);
+    for (int i = ((*posIndicator)->codIndex+1); buffer[i]!='@'; i++){
+        (*posIndicator)->codIndex+=1;
+        if(readToBufferIfNeeded(fData,posIndicator,buffer)) i = 0;
+        for (int j = 0; buffer[i]!=';'; j++){
+            if(readToBufferIfNeeded(fData,posIndicator,buffer)) i = 0;
+            code[j]=buffer[i++];
+            (*posIndicator)->codIndex++;
             codeBit++;
-            i++;
+            if(readToBufferIfNeeded(fData,posIndicator,buffer)) i = 0;
         }
-        if (codeBit != 0) {
+        if (codeBit) {
             code[codeBit]='\0';
             int k = 0;
             for (; code[k]!='\0'; k++) codesMatrix[symbol][k]=code[k];
             codesMatrix[symbol][k]='\0';
         } else codesMatrix[symbol][0]='\0';
         symbol++;
-        index = i;
+        codeBit = 0;
+        (*posIndicator)->codIndex = i;
     }
-    *indexPointer = index;
+    
+    if (codeBit) {
+            code[codeBit]='\0';
+            int k = 0;
+            for (; code[k]!='\0'; k++) codesMatrix[symbol][k]=code[k];
+            codesMatrix[symbol][k]='\0';
+    } else codesMatrix[symbol][0]='\0';
+    free(code);
+    return;
+}
+
+void commandLine(int argc,char* argv[],fileData* fData){
+    if(argc < 4 || argc > 5) printError(-1);
+    if (strcmp(argv[2],"-m") || strcmp(argv[3],"c")) printError(-2);
+    if (argc == 5 && (strcmp(argv[4],"-v"))) printError(-2);
+    else if (argc == 5) (*fData)->verbose = 1;
+    openFiles(argv,fData);
+    printf("Miguel Santa Cruz e Marisa Soares, MIEI/CD, 2020\n");
+    printf("Modulo C - Codificação do ficheiro original/RLE\n");
+    if ((*fData)->verbose) printf("[Verbose mode]\n");
+    return;
+}
+
+void openFiles(char* argv[],fileData* fData){
+    char fileFilename[strlen(argv[1])];
+    strcpy(fileFilename,argv[1]);
+    char codFilename[strlen(fileFilename)+5];
+    strcpy(codFilename,fileFilename);
+    strcat(codFilename,".cod");
+    (*fData)->file = fopen(fileFilename,"r");
+    (*fData)->cod = fopen(codFilename,"r");
+    if(!(*fData)->file  || !(*fData)->cod) printError(-3);
+    char shafFilename[strlen(fileFilename)+6];
+    strcpy(shafFilename,fileFilename);
+    (*fData)->shaf = fopen(strcat(shafFilename,".shaf"),"w");
+    strcat((*fData)->shafFilename,shafFilename);
+    if(!(*fData)->shaf) printError(-4);
+    return;
+}
+
+void printError(int x){
+    switch (x){
+    case -1:
+        printf("O número de argumentos não é correto\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opcoes]\n");
+        exit(-1);
+        break;
+    case -2:
+        printf("Opção desconhecida\nSintaxe: ./shafa (ficheiro a ser comprimido) -m c [opções]\n");
+        printf("Opções disponiveis:\n - v : verbose mode\n");
+        exit(-2);
+        break;
+    case -3:
+        printf ("Erro: Ficheiro original ou ficheiro .cod inexistente !\n");
+        exit(-3);
+        break;
+    case -4:
+        printf ("Erro: Não foi possível criar o ficheiro .shaf!\n");
+        exit(-4);
+        break;
+    case -5:
+        printf ("Erro:Tamanho do bloco muito grande\n");
+        exit(-4);
+        break;
+    default:
+        printf("Erro inesperado\n");
+        break;
+    }
+    return;
+}
+
+void printRunDetails(fileData* fData,struct timespec* initialTime,struct timespec* finalTime){
+    printf("Tamanho original do ficheiro: %d bytes\n",(*fData)->fileSize);
+    printf("Tamanho do ficheiro comprimido: %d bytes\n",(*fData)->compressedFileSize);
+    printf("Tamanho de compressão total: %.1f %%\n",((float)((*fData)->fileSize)-(*fData)->compressedFileSize)/((*fData)->fileSize)*100);
+    printf("Tempo total : %.1f ms\n",(finalTime->tv_sec-initialTime->tv_sec)*1e3+(finalTime->tv_nsec-initialTime->tv_nsec)/1e6);
+    printf("Ficheiro de saída: %s\n",(*fData)->shafFilename);
+    return;
+}
+
+void initializeStructs(fileData* fData,positionIndicator* posIndicator){
+    (*fData)->verbose = 0;
+    (*fData)->blockNumber = 2; //Inicializado a 2 para ser maior que blockIndex
+    (*fData)->blockSize = 0;
+    (*fData)->blockIndex = 1;
+    (*fData)->endOfFile = 0;
+    (*fData)->firstTime = 1;
+    (*fData)->rOrN = 0;
+    (*fData)->fileSize = 0;
+    (*fData)->compressedFileSize = 0;
+    (*posIndicator)->codIndex = 0;
+    (*posIndicator)->fileIndex = 0;
     return;
 }
