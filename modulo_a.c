@@ -44,28 +44,22 @@ void escreve_freq (Stack *s, char a []){
 
 // Função para contabilizar a frequencia de cada carater no bloco b e retorna a frequencia do carater 0,
 // útil para o RLE
-unsigned long freq (unsigned char *v, unsigned long tamBloco, int b, Stack *s){  
-    int i, freq = 0;
-    unsigned long nNull = 0;
-
-    for (i = 0; i < 255; i++){
-        for(int p = 0; p < tamBloco; p++){
-            if (v[p] == i) freq++;   
-        }
-        s->tab[b].frequencia[i] = freq;
-        freq = 0;
-    }
-    return nNull = s->tab[b].frequencia[0]; 
+void freq (unsigned char *v, unsigned long tamBloco, int b, Stack *s){  
+    for (int i = 0; i< 256; i++) s->tab[b].frequencia[i] = 0;
+    int p;
+    for(p = 0; p < tamBloco;p++){
+        s->tab[b].frequencia[v[p]] += 1; 
+    }  
 }
 
 
 
 // Função que efetua o mecanismo de RLE 
-unsigned long rle (unsigned char * v, unsigned long tamBloco,int b, Stack *s){
+unsigned long rle (unsigned char * v, unsigned long tamBloco){
     int contaR = 1;
     
     for (int i = 0; i < tamBloco; i++){
-        if (v[i] == '\0'){                   // exceção para o carater 0
+        if (v[i] == 0){                   // exceção para o carater 0
             int ultposicao = tamBloco-1;
             for(int g = tamBloco+1 ; tamBloco-i < g; g--) {
                 v[g] = v[ultposicao--];
@@ -93,11 +87,6 @@ unsigned long rle (unsigned char * v, unsigned long tamBloco,int b, Stack *s){
         }
         contaR = 1;
     }
-    int freqN = 0;
-    for(int p = 0; p < tamBloco; p++){          //conta o carater zero
-            if (v[p] == '\0') freqN++;
-    }
-    s->tab[b].frequencia[0] += freqN;
     return tamBloco;
 }
 
@@ -107,6 +96,7 @@ int taxaCompressao (unsigned long tam_I,unsigned long tam_F){
     r = r/tam_I;
     return r;
 }
+
 
 // Função que ler o ficheiro 
 int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
@@ -139,17 +129,16 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
         buffer = malloc(sizeof(unsigned char)*block_size * 2);
         
         n = fread(buffer,sizeof(unsigned char),block_size,fp);// le só o primeiro bloco
-        int freqzero = freq(buffer,block_size,0,s);
-
-        int rl = rle(buffer,block_size,0,s);
-        printf("%d\n",2);
-        int taxa = 2; //taxaCompressao(block_size, rl);
-        //s->taxaC = taxa;
+        freq(buffer,block_size,0,s);
         
-        int i;printf("%d", rl);}}
-       /* if ((taxa >= 0 && taxa < 5) && r == 0){ // não faz o rle
+        int rl = rle(buffer,block_size);
+
+        int taxa = 2;//taxaCompressao(block_size, rl);
+        s->taxaC = taxa;
+        
+        int i;
+        if ((taxa >= 0 && taxa < 5) && r == 0){ // não faz o rle
             
-            s->tab[0].frequencia[0] = freqzero;
             for (i = 1; i<= n_blocks - 2; i++){
                 fread(buffer,sizeof(unsigned char),block_size,fp);
                 freq(buffer,tam_b,i,s);
@@ -166,35 +155,32 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
             }  
         }
         else {
-            s->tamBrle[0] = 2; //rl;
+            
+            freq(buffer,rl,0,s);
+            s->tamBrle[0] = rl;
             char or [] = ".rle";
             strcat(a,or);
             strcpy(s->nome,a);
             FILE *fw = fopen (a,"wb");
             s->rle = 1;
-            fwrite(buffer,sizeof(unsigned char),2,fw);//escreve o .rle
-
+            fwrite(buffer,sizeof(unsigned char),rl,fw);//escreve o .rle
+            
            for (i = 1; i <= n_blocks - 2; i++){
-                
                 fread(buffer,sizeof(unsigned char),block_size,fp);
-                freq(buffer,block_size,i,s);
-                int t =rle(buffer,block_size,i,s);
+                int t =rle(buffer,block_size);freq(buffer,t,i,s);
                 s->tamBrle[i] = t;
                 fwrite(buffer,sizeof(unsigned char),t,fw); 
             }
             if ((size_of_last_block != block_size) && size_of_last_block != 0){
-                
                 fread(buffer,sizeof(unsigned char),size_of_last_block,fp);
-                freq(buffer,size_of_last_block,i,s);
-                int t = rle(buffer,size_of_last_block,i,s);
+                int t = rle(buffer,size_of_last_block);freq(buffer,t,i,s);
                 s->tamBrle[n_blocks-1] = t;
                 fwrite(buffer,sizeof(unsigned char),t,fw); 
             }
             else {
                 if (size_of_last_block != 0){
                     fread(buffer,sizeof(unsigned char),block_size,fp);
-                    freq(buffer,block_size,i,s);
-                    int t = rle(buffer,block_size,i,s);
+                    int t = rle(buffer,block_size);freq(buffer,t,i,s);
                     s->tamBrle[n_blocks-1] = t;
                     fwrite(buffer,sizeof(unsigned char),t,fw); 
                 }
@@ -210,7 +196,7 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
     return 1;
 }
 
-*/
+
 
 //codigo interpretador
 
