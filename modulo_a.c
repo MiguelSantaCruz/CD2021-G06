@@ -202,7 +202,8 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
 
 
 void main (int argc, char *argv[]) {
-    clock_t begin = clock(),final;
+    clock_t begin = clock() //,final;
+    float final;
     //int count;
 
     Stack s;
@@ -225,7 +226,7 @@ void main (int argc, char *argv[]) {
             int c = ler_ficheiro (argv[1],tam, a,&s,r);           
             
             clock_t end = clock();
-            final = ((double)(end - begin))*1000/ CLOCKS_PER_SEC;
+            final = ((float)(end - begin))*1000/ CLOCKS_PER_SEC;
 
             printf ("José Gonçalves, Maria Gomes, MIEI/CD, 1-jan-2021\nModulo: f (cálculo das frequências dos símbolos)\n");
             if (c == 1){
@@ -236,7 +237,7 @@ void main (int argc, char *argv[]) {
                     printf ("Tamanho dos blocos analisados no ficheiro RLE: %d/%d bytes\n", s.tamBrle[0],
                                     ((s.n_blocos == 1 ) ? (s.tamBrle[s.n_blocos]) : (s.tamBrle[s.n_blocos -1])));
                 }
-                printf ("Tempo de execução do módulo (milissegundos): %ld\n", final);
+                printf ("Tempo de execução do módulo (milissegundos): %.2f\n", final);
         
                 printf ("Ficheiros gerados: %s %s\n",s.nome, s.nfreq); 
             
