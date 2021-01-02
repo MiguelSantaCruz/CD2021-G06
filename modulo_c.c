@@ -7,7 +7,6 @@
 int main(int argc, char *argv[]){
     positionIndicator posIndicator = malloc(sizeof(struct positionIndicator));
     posIndicator->codIndex = 0;
-    posIndicator->fileIndex = 0;
 
     fileData fData = malloc(sizeof(struct fileData));
     initializeStructs(&fData,&posIndicator); 
@@ -17,12 +16,13 @@ int main(int argc, char *argv[]){
     struct timespec initialTime;
     struct timespec finalTime;
     clock_gettime(CLOCK_REALTIME,&initialTime);
-
+    //Matriz dos códigos de cada símbolo
+    char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1];
     //char* codBuffer = malloc((READ_SIZE*sizeof(char))+1);
     char codBuffer[READ_SIZE+1];
     fread(codBuffer,sizeof(char),READ_SIZE,fData->cod);
     //Ler o ficheiro .cod, codificar os blocos e escrever para o ficheiro .shaf
-    for (int i = 0; fData->endOfFile != 1 && (fData->blockIndex < fData->blockNumber); i++) readCodFile(codBuffer,&posIndicator,&fData);
+    for (int i = 0; fData->endOfFile != 1 && (fData->blockIndex < fData->blockNumber); i++) readCodFile(codesMatrix,codBuffer,&posIndicator,&fData);
     clock_gettime(CLOCK_REALTIME,&finalTime);
     printRunDetails(&fData,&initialTime,&finalTime);
     fclose(fData->cod);
@@ -31,11 +31,8 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void readCodFile(char* buffer,positionIndicator* posIndicator,fileData* fData){
-    //Matriz dos códigos de cada símbolo
-    char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1];
+void readCodFile(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1],char* buffer,positionIndicator* posIndicator,fileData* fData){
     readToBufferIfNeeded(fData,posIndicator,buffer);
-    //if ((*fData)->blockIndex > (*fData)->blockNumber) return;
     readFileandBlocksInfo(posIndicator,fData,buffer);
     readAndWriteToMatrix(codesMatrix,fData,posIndicator,buffer);
     if ((*fData)->verbose) printMatrix(codesMatrix);
@@ -53,12 +50,13 @@ void readFileandBlocksInfo(positionIndicator* posIndicator,fileData* fData,char*
          (*fData)->blockIndex = 1;
         readToBufferIfNeeded(fData,posIndicator,buffer);
         //Ler a informação ficheiro original/RLE
-        if(buffer[(*posIndicator)->codIndex++]=='N') (*fData)->rOrN = 1;
-        if ((*fData)->verbose) (*fData)->rOrN ? printf("Compressão RLE: Não\n") : printf("Compressão RLE: Sim\n");
+        if(buffer[(*posIndicator)->codIndex++]=='N') (*fData)->rle = 1;
+        if ((*fData)->verbose) (*fData)->rle ? printf("Compressão RLE: Não\n") : printf("Compressão RLE: Sim\n");
         //Ler o número de blocos e guardar no array blockNumber
+        int index = 0;
         for (int i = ++((*posIndicator)->codIndex); buffer[i]!='@'; i++){
             readToBufferIfNeeded(fData,posIndicator,buffer);
-            tempBuffer[i-((*posIndicator)->codIndex)] = buffer[i];
+            tempBuffer[index++] = buffer[i];
             (*posIndicator)->codIndex = i;
         }
         (*fData)->blockNumber = atoi(tempBuffer);
@@ -66,12 +64,14 @@ void readFileandBlocksInfo(positionIndicator* posIndicator,fileData* fData,char*
         printf("-------------------------------------------\n");
     }
     //Reiniciar buffer
-    for (int i = 0; i<=CODE_SIZE;i++) tempBuffer[i]='\0';
+    for (int i = 0; i<=BUF_SIZE;i++) tempBuffer[i]='\0';
     //Ler o tamanho do 1º bloco e guardar no array blockSize
     readToBufferIfNeeded(fData,posIndicator,buffer);
-    (*posIndicator)->codIndex+=2;
+    if (buffer[(*posIndicator)->codIndex]=='@')(*posIndicator)->codIndex++;
+    else (*posIndicator)->codIndex+=2;
     int index = 0;
-    for (int i = (*posIndicator)->codIndex; buffer[i] != '@' && buffer[i] != '\0'; i++){
+    for (int i = (*posIndicator)->codIndex; buffer[i] != '@'; i++){
+        (*posIndicator)->codIndex = i;
         if(readToBufferIfNeeded(fData,posIndicator,buffer)) i = 0;
         tempBuffer[index++]=buffer[i];
         if (index>BUF_SIZE) printError(-5);
@@ -170,16 +170,16 @@ void printMatrix(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1]){
 
 void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1],fileData* fData,positionIndicator* posIndicator,char* buffer){
     //Array que guarda a sequencia de bits correspondente a cada simbolo
-    char* code = malloc((CODE_SIZE+1)*sizeof(char));
+    char code [CODE_SIZE];
     //Numero do simbolo
     int symbol = 0;
     //Indice de leitura do array code
     int codeBit = 0;
     readToBufferIfNeeded(fData,posIndicator,buffer);
-    for (int i = ((*posIndicator)->codIndex+1); buffer[i]!='@'; i++){
+    for (int i = ((*posIndicator)->codIndex+1); buffer[i]!='@' && symbol<=255; i++){
         (*posIndicator)->codIndex+=1;
         if(readToBufferIfNeeded(fData,posIndicator,buffer)) i = 0;
-        for (int j = 0; buffer[i]!=';'; j++){
+        for (int j = 0; buffer[i]!=';' && buffer[i]!='@'; j++){
             if(readToBufferIfNeeded(fData,posIndicator,buffer)) i = 0;
             code[j]=buffer[i++];
             (*posIndicator)->codIndex++;
@@ -203,7 +203,6 @@ void readAndWriteToMatrix(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1],fil
             for (; code[k]!='\0'; k++) codesMatrix[symbol][k]=code[k];
             codesMatrix[symbol][k]='\0';
     } else codesMatrix[symbol][0]='\0';
-    free(code);
     return;
 }
 
@@ -269,7 +268,7 @@ void printError(int x){
 void printRunDetails(fileData* fData,struct timespec* initialTime,struct timespec* finalTime){
     printf("Tamanho original do ficheiro: %d bytes\n",(*fData)->fileSize);
     printf("Tamanho do ficheiro comprimido: %d bytes\n",(*fData)->compressedFileSize);
-    printf("Tamanho de compressão total: %.1f %%\n",((float)((*fData)->fileSize)-(*fData)->compressedFileSize)/((*fData)->fileSize)*100);
+    printf("Taxa de compressão total: %.1f %%\n",((float)((*fData)->fileSize)-(*fData)->compressedFileSize)/((*fData)->fileSize)*100);
     printf("Tempo total : %.1f ms\n",(finalTime->tv_sec-initialTime->tv_sec)*1e3+(finalTime->tv_nsec-initialTime->tv_nsec)/1e6);
     printf("Ficheiro de saída: %s\n",(*fData)->shafFilename);
     return;
@@ -277,15 +276,14 @@ void printRunDetails(fileData* fData,struct timespec* initialTime,struct timespe
 
 void initializeStructs(fileData* fData,positionIndicator* posIndicator){
     (*fData)->verbose = 0;
-    (*fData)->blockNumber = 2; //Inicializado a 2 para ser maior que blockIndex
+    (*fData)->blockNumber = 2; //Inicializado a 2 para ser maior que blockIndex (será substituido logo na primeira execução)
     (*fData)->blockSize = 0;
     (*fData)->blockIndex = 1;
     (*fData)->endOfFile = 0;
     (*fData)->firstTime = 1;
-    (*fData)->rOrN = 0;
+    (*fData)->rle = 0;
     (*fData)->fileSize = 0;
     (*fData)->compressedFileSize = 0;
     (*posIndicator)->codIndex = 0;
-    (*posIndicator)->fileIndex = 0;
     return;
 }
