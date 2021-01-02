@@ -13,4 +13,13 @@
 //Lê .rle e cria .txt
 void readRLE(FILE *rle, FILE *freq, FILE *file, long int rlesize)
 
+//Lê cod
+void readCod(FILE *cod,long int shafsize)
+
+//Array de inteiros para um inteiro só
+int array_to_num(int arr[],int n)
+
+//Lê shaf
+void readShaf(FILE *shaf, FILE *cod, FILE *file, long int shafsize)
+
 #endif
