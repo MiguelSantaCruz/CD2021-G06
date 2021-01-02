@@ -18,7 +18,7 @@ int main (int argc, char argv[]){
     if (strcmp(argv[2], "-m") && strcmp(argv[3], "d")){
         printf("entrou");
         char shafFilename[strlen(argv[1])];
-        strcpy(shafFilename,argv[1]);
+        strcpy(shafFilename,argv[1]);     [shafa, ...]
         char codFilename[strlen(shafFilename)+9];
         strncpy(codFilename,shafFilename,strlen(shafFilename)-5);
         strcat(codFilename,".cod");
@@ -59,8 +59,8 @@ int main (int argc, char argv[]){
     FILE *shaf = fopen("aaa.txt.shaf", "r");
     FILE *cod = fopen ("aaa.txt.cod", "r");
 
-    readRLE(rle, NULL, file, 3000);
-    //readShaf(shaf,cod,file, 3000);
+    //readRLE(rle, NULL, file, 3000);
+    readShaf(shaf,cod,file, 3000);
     //readCod(cod, 3000);
     return 0;    
 }
@@ -72,33 +72,80 @@ void readShaf(FILE *shaf, FILE *cod, FILE *file, long int shafsize){
     int i;
     int j;
     int contar = 0;
+    unsigned int m;
     char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1];
 
+    //lê shaf
     fread(bufferShaf,1,shafsize,shaf);
     printf("%s\n", bufferShaf);
     //printf("%lld\n", buffer[7]);
     
+    //passa à frente os '@'
     for (i = 0; contar < 3; i++)
         if (bufferShaf[i] == '@') contar++;
     for (j = i; bufferShaf[j] != '@'; j++);
+    
+    //mudo o apontador para o inicio do conteudo do bloco
     fseek(shaf, i, SEEK_SET);
     fread(nextbuffer,1, j - i, shaf);
 
-    //printf("contar = %d, i = %d\n", contar, i);
-    printf("%d\n", strlen(nextbuffer));
-    for(i = 0; i < strlen(nextbuffer); i++)
-        printf("%d ", nextbuffer[i]);
+    char aux[10000];
+    aux[0] = '\0';
+    j = 0;
+    int c = 0;
 
+
+    //mete num array bit a bit
+    for(i = 0; i < strlen(nextbuffer); i++){
+        char aux1[64];
+        m = decimalToBinary(charToInt(nextbuffer[i]));    
+        c+=4;
+        sprintf(aux1, "%d", m);
+        strcat(aux, aux1);
+        aux1[0] = '\0';
+    }
+    
+    //Elimina o lixo 
+    for(i = 0; i ;i++)
+        if(aux[i] != 1 && aux[i] != 0){
+            aux[i] = '\0';
+            break;
+        }
+
+    // Debugging    
+    for (i = 0; aux[i] != '\0'; i++)
+        printf("%c", aux[i]);
     printf("\n");
-    //printf("%d\n", nextbuffer);
-    /*
-    char nb[3];
-    for (int j = 0; j < 3; j++)
-        nb[j] = buffer[i++];
-    printf("%s\n", nb);
-    */
+
 }
 
+int charToInt(char *c){
+    int i;
+    i = (int)(c);
+    return i;
+}
+/*
+int countBits(unsigned int number) 
+{       
+      // log function in base 2  
+      // take only integer part 
+      return (int)((log(number)+1)/(log(2)));
+}
+*/
+long decimalToBinary(int decimalnum)
+{
+    long binarynum = 0;
+    int rem, temp = 1;
+
+    while (decimalnum!=0)
+    {
+        rem = decimalnum%2;
+        decimalnum = decimalnum / 2;
+        binarynum = binarynum + rem*temp;
+        temp = temp * 10;
+    }
+    return binarynum;
+}
 
 void readCod(FILE *cod,long int shafsize){
     //TODO (pode precisar de mais argumentos)
@@ -177,7 +224,7 @@ void readRLE(FILE *rle, FILE *freq, FILE *file, int rlesize){
     char newbuffer[rlesize];
 
     fread(newbuffer, sizeof(char), rlesize, rle);
-    //printf("%c\n",newbuffer[1348]);
+
 /*
     for (i = 0; i < 1494; i++){
         if (newbuffer[i] == NULL) 
