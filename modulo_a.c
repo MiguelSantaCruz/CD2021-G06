@@ -42,8 +42,7 @@ void escreve_freq (Stack *s, char a []){
 }
 
 
-// Função para contabilizar a frequencia de cada carater no bloco b e retorna a frequencia do carater 0,
-// útil para o RLE
+// Função para contabilizar a frequencia de cada carater no bloco
 void freq (unsigned char *v, unsigned long tamBloco, int b, Stack *s){  
     for (int i = 0; i< 256; i++) s->tab[b].frequencia[i] = 0;
     int p;
@@ -133,7 +132,7 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
         
         int rl = rle(buffer,block_size);
 
-        int taxa = 2;//taxaCompressao(block_size, rl);
+        int taxa = taxaCompressao(block_size, rl);
         s->taxaC = taxa;
         
         int i;
