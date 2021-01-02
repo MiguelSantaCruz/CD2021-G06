@@ -1,18 +1,27 @@
+/*
+Autores: João Nunes - A87972 , André Silva - A87958
+Data: 01/01/2020
+Versão: Final
+
+Ficheiro onde são declaradas as funções usadas.
+É aqui também declarada a estrutura de dados usada no programa.
+*/
+
 #ifndef __MODULO_B_H__
-#define __MODULO_C_H__
+#define __MODULO_B_H__
+
 #define NUMBER_OF_FREQ 256
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "main.h"
 
 
-typedef struct node {
-    int init_symbol; //109
-    int final_symbol;
-    int freq; // 768
-    char code[256]; // 10
+typedef struct node {   //Estrutura de dados com informações de cada simbolo
+    int init_symbol;    //Posição inicial do simbolo no ficheiro inicial
+    int final_symbol;   //Posição final do simbolo no ficheiro inicial
+    int freq;           //Frequencia do simbolo
+    char code[256];     //Codigo do simbolo
 }node;
 
 void readFreqs (FILE *freq, int indexPointer, char *buffer, long long block_size);
