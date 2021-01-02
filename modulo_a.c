@@ -70,40 +70,44 @@ void freq (unsigned char *v, unsigned long tamBloco, int b, Stack *s){
 
 
 // Função que efetua o mecanismo de RLE 
-unsigned long rle (unsigned char * v, unsigned long tamBloco){
+unsigned long rle (unsigned char * v, unsigned char * f,unsigned long tamBloco){
     int contaR = 1;
-    
-    for (int i = 0; i < tamBloco; i++){
-        if (v[i] == 0){                   // exceção para o carater 0
-            int ultposicao = tamBloco-1;
-            for(int g = tamBloco+1 ; tamBloco-i < g; g--) {
-                v[g] = v[ultposicao--];
-            }
-            v[i+1] = v[i]; //v[i] = '\0';
-            sprintf(&v[i+2], "%c", contaR);
-            i = i + 2;
-            tamBloco = tamBloco + 2;
+    int iv, i = 0;
+    unsigned long t = tamBloco;
+    for (int iv = 0; iv < tamBloco; iv++){
+        if (v[iv] == 0){                   // exceção para o carater 0
+            f[i] = v[iv];
+            f[i+1] = v[iv];
+            sprintf(&f[i+2], "%c", contaR);
+            i = i + 3;
+            t += 2;
+
         }
         else {                                  // para qualquer carater que se repita mais de 3
-            for (int j = i+1; j < tamBloco; j++){
-                if (v[i] == v[j]) contaR++;
+            for (int j = iv + 1; j < tamBloco; j++){
+                if (v[iv] == v[j]) contaR++;
                 else j = tamBloco;    
             }
             if (contaR >= 4){
-                v[i+1] = v[i];
-                v[i] = '\0';
-                sprintf(&v[i+2], "%c", contaR);
-                for(int a = i+3; a < tamBloco; a++) {
-                    v[a] = v[a + (contaR-3)];
-                }
-                i = i + 2;
-                tamBloco = tamBloco - (contaR-3);
+                f[i+1] = v[iv];
+                f[i] = '\0';
+                sprintf(&f[i+2], "%c", contaR);
+                i = i + 3;
+                iv += (contaR-1);
+                t = t - (contaR-3);
             }
+            else {
+                f[i] = v[iv];
+                i++;
+            } 
         }
         contaR = 1;
     }
-    return tamBloco;
+    return t;
 }
+
+
+
 
 // Função que indica a rentabilidade do mecanismo de compressão RLE
 int taxaCompressao (unsigned long tam_I,unsigned long tam_F){
@@ -141,19 +145,20 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
         strcpy (s->nome,"\0"); 
         
         unsigned char * buffer;
-        buffer = malloc(sizeof(unsigned char)*block_size * 2);
+        unsigned char * buffer1;
+        buffer = malloc(sizeof(unsigned char)*block_size);
+        buffer1 = malloc(sizeof(unsigned char)*block_size * 2);
         
         n = fread(buffer,sizeof(unsigned char),block_size,fp);// le só o primeiro bloco
-        freq(buffer,block_size,0,s);
         
-        int rl = rle(buffer,block_size);
-
+        int rl = rle(buffer,buffer1, block_size);
+        
         int taxa = taxaCompressao(block_size, rl);
         s->taxaC = taxa;
         
         int i;
-        if ((taxa >= 0 && taxa < 5) && r == 0){ // não faz o rle
-            
+        if ((taxa < 5) && r == 0){ // não faz o rle
+            freq(buffer,block_size,0,s);
             for (i = 1; i<= n_blocks - 2; i++){
                 fread(buffer,sizeof(unsigned char),block_size,fp);
                 freq(buffer,tam_b,i,s);
@@ -171,33 +176,33 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
         }
         else {
             
-            freq(buffer,rl,0,s);
+            freq(buffer1,rl,0,s);
             s->tamBrle[0] = rl;
             char or [] = ".rle";
             strcat(a,or);
             strcpy(s->nome,a);
             FILE *fw = fopen (a,"wb");
             s->rle = 1;
-            fwrite(buffer,sizeof(unsigned char),rl,fw);//escreve o .rle
+            fwrite(buffer1,sizeof(unsigned char),rl,fw);//escreve o .rle
             
            for (i = 1; i <= n_blocks - 2; i++){
                 fread(buffer,sizeof(unsigned char),block_size,fp);
-                int t =rle(buffer,block_size);freq(buffer,t,i,s);
+                int t =rle(buffer,buffer1, block_size);freq(buffer1,t,i,s);
                 s->tamBrle[i] = t;
-                fwrite(buffer,sizeof(unsigned char),t,fw); 
+                fwrite(buffer1,sizeof(unsigned char),t,fw); 
             }
             if ((size_of_last_block != block_size) && size_of_last_block != 0){
                 fread(buffer,sizeof(unsigned char),size_of_last_block,fp);
-                int t = rle(buffer,size_of_last_block);freq(buffer,t,i,s);
+                int t = rle(buffer,buffer1, size_of_last_block);freq(buffer1,t,i,s);
                 s->tamBrle[n_blocks-1] = t;
-                fwrite(buffer,sizeof(unsigned char),t,fw); 
+                fwrite(buffer1,sizeof(unsigned char),t,fw); 
             }
             else {
                 if (size_of_last_block != 0){
                     fread(buffer,sizeof(unsigned char),block_size,fp);
-                    int t = rle(buffer,block_size);freq(buffer,t,i,s);
+                    int t = rle(buffer,buffer1, block_size);freq(buffer1,t,i,s);
                     s->tamBrle[n_blocks-1] = t;
-                    fwrite(buffer,sizeof(unsigned char),t,fw); 
+                    fwrite(buffer1,sizeof(unsigned char),t,fw); 
                 }
             }
         }  

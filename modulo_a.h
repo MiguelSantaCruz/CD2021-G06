@@ -86,6 +86,6 @@ typedef struct {
 
 void escreve_freq (Stack *s, char a []);
 void freq (unsigned char v [], unsigned long tamBloco, int b, Stack * s);
-unsigned long rle (unsigned char v [], unsigned long tambloco);
+unsigned long rle (unsigned char v [], unsigned char * f, unsigned long tambloco);
 int taxaCompressao (unsigned long tam_I,unsigned long tam_F);
 int ler_ficheiro (char fic [],unsigned long tam_b, char a [],Stack *s,int r);
