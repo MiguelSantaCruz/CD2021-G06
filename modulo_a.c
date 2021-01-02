@@ -204,7 +204,7 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
 
 void main (int argc, char *argv[]) {
     clock_t begin = clock(),final;
-    int count;
+    //int count;
 
     Stack s;
     int tam = 65536;
