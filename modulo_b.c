@@ -1,3 +1,25 @@
+/*
+Autores: João Nunes - A87972 , André Silva - A87958
+Data: 01/01/2020
+Versão: Final
+
+Na realização deste trabalho começamos por identificar se os argumentos dados são válidos. De seguida,
+abrimos o ficheiro dado e passamos para variaveis, informação que irá ser necessaria no seguimento do
+programa. Após isto, copiamos do ficheiro para o buffer de entrada um bloco, contruimos uma estrutura de dados
+com a posição de cada simbolo e a respetiva frequencia. Ao mesmo tempo, criamos um array de frequencias
+ordenado decrescentemente. Por fim aplicamos o algoritmo de Shanon-Fano para criar os codigos de cada símbolo 
+e guarda-los numa matriz. Apos isto é atualizada a nossa estrutura de dados para conter os codigos de cada
+simbolo para, posteriormente, lermos da estrutura de dados e escrevermos no buffer de saida o bloco processado.
+Depois de obtermos o bloco totalmente processado e escrito no buffer de saida, este será escrito no ficheiro
+final.
+Esta operação repete-se para todos os blocos exceto o ultimo. Este é tratado à parte por ter um tamanho
+de bloco diferente.
+
+Foi utilizada uma estrutura de dados que contém toda a informação necessaria para o processamento do bloco.
+Esta está explicada em detalhe no ficheiro modulo_b.h.
+Ao longo do código estão explicados os objetivos das variaveis mais importantes.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,15 +31,22 @@
 int main (int argc, char* argv[]){
 
     clock_t start_time = clock(); //Iniciar contador do tempo de execução
+    int verbose=0;
 
-    if(argc!=4){
-        printf ("Número de argumentos incorreto.\nUsar: ./shafa exemplo.txt.freq -m t");
+    if(argc!=4 && argc!=5){
+        printf ("Número de argumentos incorreto.\nUsar: ./shafa exemplo.txt.freq -m t (-v)");
         exit(1);
     }
 
     if(strcmp(argv[2], "-m") || strcmp(argv[3], "t")){
-        printf ("Argumentos incorretos.\nUsar: ./shafa exemplo.txt.freq -m t");
+        printf ("Argumentos incorretos.\nUsar: ./shafa exemplo.txt.freq -m t (-v)");
         exit(4);
+    }
+
+    if(argc==5){
+        if(!strcmp(argv[4], "-v")){
+            verbose = 1;
+        }
     }
 
     int len=0;
@@ -39,9 +68,9 @@ int main (int argc, char* argv[]){
         exit(2);
     }
 
-    long long n_blocks;
-    unsigned long block_size;
-    int size_of_last_block;
+    long long n_blocks; //numero de blocos
+    unsigned long block_size; //tamanho do bloco
+    int size_of_last_block; //tamanho do ultimo bloco
 
     fseek (ficheiroFreq, 0L, SEEK_SET);
     rewind (ficheiroFreq);
@@ -60,19 +89,19 @@ int main (int argc, char* argv[]){
 
     while ((c = fgetc(ficheiroFreq)) != EOF){ //Ciclo que determina se é normal ou rle, o numero de blocos e o tamanho dos blocos
         index++;
-        if (c == 'N') rOrN = 1;
+        if (c == 'N') rOrN = 1; //Guardar se o modo é normal ou RLE
         if (a == c) arrobas++;
         else if (arrobas == 3){
             if (k==1){
-                c_block_size = malloc(k*12);
+                c_block_size = malloc(k+1); 
                 k++;
             }
             else {
-                c_block_size = realloc(c_block_size, k*12);
+                c_block_size = realloc(c_block_size, k+1); 
                 k++;
             }
             sprintf(str,"%d", atoi(&c));
-            strcat (c_block_size, str);
+            strcat (c_block_size, str); //Guardar o tamanho do bloco
         } else if (arrobas == 2){
             int count=0;
             while(c !='@'){
@@ -81,7 +110,7 @@ int main (int argc, char* argv[]){
                 c = fgetc(ficheiroFreq);
             }
             str_aux[count]='\0';
-            strcat(n_blocks_s,str_aux);
+            strcat(n_blocks_s,str_aux); //Guardar o numero de blocos
             arrobas++;
             index+=count;
         }
@@ -92,7 +121,7 @@ int main (int argc, char* argv[]){
 
     int nb=atoi(n_blocks_s);
     n_blocks = nb;
-    int pos_freqs = index-3-strlen(n_blocks_s);
+    int pos_freqs = index-3-strlen(n_blocks_s); //posição em que as frequencias se encontram no buffer
     int posmove = index +1;
     index = index-k-1;
     fseek(ficheiroFreq, index, SEEK_SET);
@@ -102,14 +131,14 @@ int main (int argc, char* argv[]){
     int i = 0;
     int dist = 0;
     int indexpointer = index;
-    struct node nodes[256];
-    int array_size = 0;
+    struct node nodes[256]; //struct que guarda os dados de cada simbolo
+    int array_size = 0; //tamanho do array das frequencias
     int pos = 0;
     char strtemp2[100];
-    int fst_time = 0;
-    char *exit_buffer;
+    int fst_time = 0; //Variavel que diz se estamos no primeiro bloco
+    char *exit_buffer; //buffer de saida
     exit_buffer = (char *)malloc(256);
-    char *codes;
+    char *codes; //variavel que guarda os codigos de todos os simbolos de um bloco ja separados por ;.
     codes = (char *)malloc(256*256);
     int cont;
 
@@ -128,7 +157,7 @@ int main (int argc, char* argv[]){
         codes[0] = '\0';
         char _matrix [NUMBER_OF_FREQ][NUMBER_OF_FREQ] = {'x'};
         array_size = 0;
-        int freq_Array[256]; 
+        int freq_Array[256]; //Array das frequencias
         memset(freq_Array,0,256);
         memset (&nodes, -1 ,256*sizeof(node));
         char *entry_buffer;
@@ -147,8 +176,25 @@ int main (int argc, char* argv[]){
         }
 
         minSort (freq_Array, array_size); //Função que ordena com ordem decrescente as frequencias
+
+        if(verbose){
+            for(int h=0; h<array_size; h++){
+                printf("Freq[%d] = %d\n", h, freq_Array[h]);
+            }
+            printf("\n");
+        }
         
         calcular_codigos_SF (freq_Array, _matrix, 0, array_size-1, 0); //Função que calcula os codigos Shanon-Fano
+
+        if(verbose){
+            for(int i=0; i<NUMBER_OF_FREQ && i<array_size; i++){
+                printf("Codigo[%d] - ", i);
+                for(int j=0; j<NUMBER_OF_FREQ && j<array_size-1; j++){
+                    printf("%c", _matrix[i][j]);
+                }
+                printf("\n");
+            }
+        }
 
         char d = ';';
         cont = 0;
@@ -210,11 +256,11 @@ int main (int argc, char* argv[]){
     //Codigo referente ao ultimo bloco, ou primeiro caso so haja 1 bloco
     array_size=0; //Reset de varias variaveis usadas durante o ciclo
     codes[0]='\0';
-    int freq_Array[256];
+    int freq_Array[256]; //Array das frequencias
     memset(freq_Array,0,256);
     memset (&nodes, -1 ,256*sizeof(node));
     exit_buffer[0]='\0';
-    char *entry_buffer;
+    char *entry_buffer; //Buffer de entrada
     entry_buffer = (char *)malloc(dist+5);
     dist = 256+distArroba (ficheiroFreq); //Distancia ate ao fim do bloco
     fseek(ficheiroFreq, indexpointer, SEEK_SET);
@@ -229,7 +275,7 @@ int main (int argc, char* argv[]){
 
     straux[counter]='\0';
     size_of_last_block = atoi(straux);
-    pos_freqs = strlen(straux)+2;
+    pos_freqs = strlen(straux)+2; //posição das frequencias no array das frequencias
     fseek(ficheiroFreq, indexpointer, SEEK_SET);
     fread(entry_buffer, sizeof(char), dist, ficheiroFreq); //Função que le do ficheio para o buffer
     entry_buffer[dist]='\0';
@@ -241,9 +287,27 @@ int main (int argc, char* argv[]){
     }
 
     minSort (freq_Array, array_size); //Função que ordena com ordem decrescente as frequencias
+
+    if(verbose){
+        for(int h=0; h<array_size; h++){
+            printf("Freq[%d] = %d\n", h, freq_Array[h]);
+        }
+        printf("\n");
+    }
+
     char _matrix [NUMBER_OF_FREQ][NUMBER_OF_FREQ] = {'x'};
 
     calcular_codigos_SF (freq_Array, _matrix, 0, array_size-1, 0); //Função que calcula os codigos Shanon-Fano
+
+    if(verbose){
+        for(int i=0; i<NUMBER_OF_FREQ && i<array_size; i++){
+            printf("Codigo[%d] - ", i);
+            for(int j=0; j<NUMBER_OF_FREQ && j<array_size-1; j++){
+                printf("%c", _matrix[i][j]);
+            }
+            printf("\n");
+        }
+    }
 
     char d = ';';
     cont = 0;
@@ -348,7 +412,7 @@ int distArroba (FILE *freq){ //Função que calcula a distancia ate ao fim do bl
     return i;
 }
 
-void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs){ //Função que constroi a struct com os dados do buffer
+void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs){ //Função que constroi a struct com os dados do buffer e o array das frequencias
     int i = 0;
     int j = pos_freqs;
     char c;
@@ -362,17 +426,17 @@ void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs)
                 counter++;
             }
             if (buffer[j]!= '0'){
-                nodes[i].init_symbol = j+3-counter;
-                while (buffer[j] != ';' && j<strlen(buffer)){
+                nodes[i].init_symbol = j+3-counter; //Guardar a posição inicial da frequencia
+                while (buffer[j] != ';' && j<strlen(buffer)){ //Percorrer a frequencia para chegar á posição final
                     c = buffer[j];
-                    strncat(str,&c,1);
+                    strncat(str,&c,1); //Concatenar na variavel str a frequencia
                     j++;
                 }
                 strcpy(nodes[i].code, "x");
-                nodes[i].final_symbol = j+2-counter;
-                nodes[i].freq = atoi(str);
-                if(atoi(str)!= 0) freq_array[i] = atoi(str);
-                str[0] = '\0';
+                nodes[i].final_symbol = j+2-counter; //Guardar a posição final
+                nodes[i].freq = atoi(str); //Guardar a frequencia na struct
+                if(atoi(str)!= 0) freq_array[i] = atoi(str); //Guardar a frequencia no array das frequencias
+                str[0] = '\0'; //Reset da variavel str
                 i+=1;
             }
         }
@@ -478,26 +542,26 @@ void calcular_codigos_SF (int *freqArray, char _matrix[NUMBER_OF_FREQ][NUMBER_OF
      
      for (int i=0; i<256; i++){
          if (nodes[i].init_symbol != -1){
-            while(k<nodes[i].init_symbol+counter2){ 
+            while(k<nodes[i].init_symbol+counter2){ //Escrever ";" até chegarmos ao local onde temos de escrever o codigo do simbolo
                 k++;
                 strncat(exitBuffer, ";", 1);
                 counter++;
             }
 
-            strcat(exitBuffer, nodes[i].code);
+            strcat(exitBuffer, nodes[i].code); //Escrever o codigo do simbolo
             k+=strlen(nodes[i].code);
             counter2+=strlen(nodes[i].code)-(nodes[i].final_symbol - nodes[i].init_symbol+1);
             if(counter!=255){
-                strncat(exitBuffer, ";", 1);
+                strncat(exitBuffer, ";", 1); //Adicionar ";" depois de cada codigo
             }
             counter++;
             k++;
-            if ((nodes[i].final_symbol - nodes[i].init_symbol+1)>strlen(nodes[i].code)){
+            if ((nodes[i].final_symbol - nodes[i].init_symbol+1)>strlen(nodes[i].code)){ 
                 k+=nodes[i].final_symbol - nodes[i].init_symbol+1-strlen(nodes[i].code);
-            }
+            }//Se o comprimento da frequencia for maior que o comprimento do codigo essa diferença é incrementada a k
          }
          else{
-             while(counter<255){  
+             while(counter<255){//Adicionar os ";" restantes
                 strncat(exitBuffer, ";", 1);
                 counter++;
              }
