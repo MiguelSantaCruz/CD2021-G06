@@ -1,7 +1,23 @@
+/* Autores: João Gonçalves - A93204 , Maria Gomes - A93314
+Data: 03/01/2020
+
+Na realização deste módulo começamos por ler os argumentos e passa-los à função ler_ficheiro.
+A função ler_ficheiro com a utilização da função f_size atribui os valores à váriaveis 
+n_blocks e size_of_last_block depois a estrutura de dados que contém toda a informção relativa a este 
+módulo é inicializada. A leitura do ficheiro é efetuada por blocos de tamanho definido pelo utilizador
+ou por defeito,utilizando a função fread, depois é chamada a função rle, que aplica o mecânismo de 
+compressão RLE e devolve o tamanho do bloco resultante.
+Dependendo do resultado da função taxaCompressao ou da opção do utilizador é ou não aplicado a todo o
+ficheiro a compressão RLE, sendo aplicado o ficheiro .rle será escrito usando a função fwrite.
+As frequencias de cada bloco são escrita pela função freq e guardadas na estrutura de dados.
+Por fim, o ficheiro .freq será escrito usando a função escreve_freq ultizando a estrutura de dados.    
+*/
+
 #include "modulo_a.h"
 
-// Função que escreve o ficheiro com as frequencias, recebe uma estrura de dados com informação necessárias
-// para escrever o ficheiro e nome do ficheiro 
+/*Função que escreve o ficheiro com as frequencias, recebe uma estrura de dados com a informação 
+necessária para escrever o ficheiro .freq e nome do ficheiro */
+
 void escreve_freq (Stack *s, char a []){
     FILE *f;
     char or [] = ".freq";// serve para alterar o nome
@@ -202,9 +218,8 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
 
 
 void main (int argc, char *argv[]) {
-    clock_t begin = clock() //,final;
+    clock_t begin = clock();
     float final;
-    //int count;
 
     Stack s;
     int tam = 65536;

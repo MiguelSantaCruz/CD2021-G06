@@ -1,3 +1,12 @@
+/* Autores: João Gonçalves - A93204 , Maria Gomes - A93314
+Data: 03/01/2020
+
+Ficheiro contém a função fsize alterada para que estabelece-se um tamanho minimo para o ficheiro 
+recebido e para o tamanho dos blocos de um 1024 bytes.
+Tem a nossa estrutura de dados e os prototipos das funções criadas.
+    
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,10 +25,8 @@
 long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_size, long *size_of_last_block)
 {   
     unsigned long long total;
-    long long n_blocks;
-    //unsigned long n_read, 
+    long long n_blocks; 
     unsigned long block_size;
-    //unsigned char *temp_buffer;
     int fseek_error;
     FILE *fp;
 
