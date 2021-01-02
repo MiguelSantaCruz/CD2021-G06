@@ -18,7 +18,7 @@ long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_s
     unsigned long long total;
     long long n_blocks;
     //unsigned long n_read, 
-    unsigned longblock_size;
+    unsigned long block_size;
     //unsigned char *temp_buffer;
     int fseek_error;
     FILE *fp;
