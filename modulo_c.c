@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 
-int main(int argc, char *argv[]){
+int mainModuloC(int argc, char *argv[]){
     positionIndicator posIndicator = malloc(sizeof(struct positionIndicator));
     posIndicator->codIndex = 0;
 
@@ -256,7 +256,12 @@ void printError(int x){
         break;
     case -5:
         printf ("Erro:Tamanho do bloco muito grande\n");
-        exit(-4);
+        exit(-5);
+        break;
+    case -6:
+        printf("Erro\nSintaxe: ./shafa (ficheiro a ser comprimido) -m [f|t|c|d] [opções]\n");
+        printf("Opções disponiveis:\n - v : verbose mode\n");
+        exit(-6);
         break;
     default:
         printf("Erro inesperado\n");
