@@ -30,7 +30,7 @@ int distArroba (FILE *freq);
 
 void toStruct (struct node nodes[], char *buffer, int *freq_Array, int pos_freqs);
 
-void minSort (int *freq_Array, int array_size);
+void arraySort (int *freq_Array, int array_size);
 
 int calcular_melhor_divisao (int *freqArray, int i, int j);
 

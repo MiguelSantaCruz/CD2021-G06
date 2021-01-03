@@ -5,21 +5,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 //#include "main.h"
 //#include "modulo_a.h"
 //#include "modulo_b.h"
 //#include "modulo_c.h"
 
 //Lê .rle e cria .txt
-void readRLE(FILE *rle, FILE *freq, FILE *file, long int rlesize)
+void readRLE(FILE *rle, FILE *freq, FILE *file, int rlesize);
 
 //Lê cod
-void readCod(FILE *cod,long int shafsize)
+void readCod(FILE *cod,long int shafsize, char newaux[], FILE* file);
 
 //Array de inteiros para um inteiro só
-int array_to_num(int arr[],int n)
+int array_to_num(int arr[],int n);
 
 //Lê shaf
-void readShaf(FILE *shaf, FILE *cod, FILE *file, long int shafsize)
+void readShaf(FILE *shaf, FILE *cod, FILE *file, long int shafsize);
+
+int  decimalToBinary(int decimalnum);
+
+int charToInt(unsigned char *c);
 
 #endif

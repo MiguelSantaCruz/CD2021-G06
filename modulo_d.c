@@ -18,7 +18,7 @@ int main (int argc, char argv[]){
     if (strcmp(argv[2], "-m") && strcmp(argv[3], "d")){
         printf("entrou");
         char shafFilename[strlen(argv[1])];
-        strcpy(shafFilename,argv[1]);
+        strcpy(shafFilename,argv[1]);     [shafa, ...]
         char codFilename[strlen(shafFilename)+9];
         strncpy(codFilename,shafFilename,strlen(shafFilename)-5);
         strcat(codFilename,".cod");
@@ -55,13 +55,14 @@ int main (int argc, char argv[]){
 
     //mudei para w
     FILE *file = fopen("aaa1.txt", "w");
+    FILE *file1 = fopen("aaa2.txt", "w");
     FILE *rle = fopen("aaa.txt.rle", "r");
     FILE *shaf = fopen("aaa.txt.shaf", "r");
     FILE *cod = fopen ("aaa.txt.cod", "r");
 
-    readRLE(rle, NULL, file, 3000);
-    //readShaf(shaf,cod,file, 3000);
-    //readCod(cod, 3000);
+    readRLE(rle, NULL, file, 1422);
+    //readShaf(shaf,cod,file1, 3000);
+    //readCod(cod, 3000, NULL);
     return 0;    
 }
 
@@ -72,45 +73,107 @@ void readShaf(FILE *shaf, FILE *cod, FILE *file, long int shafsize){
     int i;
     int j;
     int contar = 0;
-    char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1];
+    unsigned int m;
+    int blockSize;
+    char buffer[15];
 
+    //lê shaf
     fread(bufferShaf,1,shafsize,shaf);
-    printf("%s\n", bufferShaf);
+    //printf("%s\n", bufferShaf);
     //printf("%lld\n", buffer[7]);
     
-    for (i = 0; contar < 3; i++)
-        if (bufferShaf[i] == '@') contar++;
+    //passa à frente os '@'
+    for (i = 0; contar < 2; i++)
+        if (bufferShaf[i] == '@'){ 
+            contar++;
+            if (contar == 2) {
+                for (j = 0, i+=1; bufferShaf[i] != '@'; j++)
+                    buffer[j] = bufferShaf[i++];
+                blockSize = atoi(buffer);
+            }        
+        }    
     for (j = i; bufferShaf[j] != '@'; j++);
+    
+    //mudo o apontador para o inicio do conteudo do bloco
     fseek(shaf, i, SEEK_SET);
-    fread(nextbuffer,1, j - i, shaf);
+    fread(nextbuffer,1, blockSize, shaf);
 
-    //printf("contar = %d, i = %d\n", contar, i);
-    printf("%d\n", strlen(nextbuffer));
-    for(i = 0; i < strlen(nextbuffer); i++)
+    char aux[blockSize];
+    aux[0] = '\0';
+    j = 0;
+    int c = 0;
+
+    
+    for (i = 0; nextbuffer[i] != '\0'; i++)
         printf("%d ", nextbuffer[i]);
+    
 
+    //mete num array bit a bit
+    for(i = 0; nextbuffer[i]!= '\0'; i++){
+        char aux1[64];
+        m = decimalToBinary(charToInt((unsigned)nextbuffer[i]));    
+        c+=4;
+        sprintf(aux1, "%d", m);
+        strcat(aux, aux1);
+        aux1[0] = '\0';
+    }
+    
+    
+    
+    printf(".shaf\n");   
+    //Debugging    
+    for (i = 0; aux[i] != '\0'; i++)
+        printf("%c", aux[i]);
     printf("\n");
-    //printf("%d\n", nextbuffer);
-    /*
-    char nb[3];
-    for (int j = 0; j < 3; j++)
-        nb[j] = buffer[i++];
-    printf("%s\n", nb);
-    */
+    
+    
+
+    //findSF(cd, 10, 256);
+    readCod(cod, blockSize, aux, file);
+}
+
+int findSF(int *str, int num, int blockSize){      
+    int i;
+    for (i = 0; i < 256; i++){
+        if (str[i] == num) return i;                                                         
+    }
+    return -2;    
 }
 
 
-void readCod(FILE *cod,long int shafsize){
+int charToInt(unsigned char *c){
+    int i;
+    i = (int)(c);
+    return i;
+}
+
+
+int  decimalToBinary(int decimalnum)
+{
+    int binarynum = 0;
+    int rem, temp = 1;
+
+    while (decimalnum!=0)
+    {
+        rem = decimalnum%2;
+        decimalnum = decimalnum / 2;
+        binarynum = binarynum + rem*temp;
+        temp = temp * 10;
+    }
+    return binarynum;
+}
+                                            //shaf em binario
+void readCod(FILE *cod,long int blockSize, char* newaux, FILE* file){
     //TODO (pode precisar de mais argumentos)
-    unsigned char bufferCod[shafsize];
-    unsigned char nextbuffer[shafsize];
+    unsigned char bufferCod[blockSize];
+    unsigned char nextbuffer[blockSize];
     int i;
     int j;
     int contar = 0;
     int nd;
     char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1];
     int conta;
-    fread(bufferCod,1,shafsize,cod);
+    fread(bufferCod,1,blockSize,cod);
     //printf("%s\n", bufferCod);
     //printf("%lld\n", buffer[7])
 
@@ -120,12 +183,12 @@ void readCod(FILE *cod,long int shafsize){
     fseek(cod, i, SEEK_SET);
     fread(nextbuffer,1, j - i, cod);
 
-    //printf("\n%s\n", nextbuffer);
+    //printf("\n%s\n", nextbuffer);                                                                findSF()
 
     int str[256];
     int pos = 0;
     for(i = 0; i<256; i++) str[i] = -1;
-    for (i = 0; i < strlen(nextbuffer); i++, pos++){
+    for (i = 0; i < strlen(nextbuffer); i++, pos++){   
         int aux[16];
         j = 0;
         while(nextbuffer[i] != ';') {
@@ -134,27 +197,60 @@ void readCod(FILE *cod,long int shafsize){
                     
             i++;
         }
-        aux[j] = NULL;
+        aux[j] = '\0';
         if (j > 0){
 
             str[pos] = array_to_num(aux, j);
 
-        }    
+        }
+
+            
         //sprintf(aux, "%d", )  
     }
-    for (i = 0; i < 256; i++)
+    /*for (i = 0; i < 256; i++)
         printf("%d ",str[i]);
     //printMatrix(str);
-    printf("\n");
-    printf("97 - %d, 98- %d, 99 - %d, 100 - %d\n", str[97],str[98],str[99],str[100]);
+    //printf("\n");
+    //printf("97 - %d, 98- %d, 99 - %d, 100 - %d\n", str[97],str[98],str[99],str[100]);    [1,0,0,0]
+    */ 
+    char aux[16];
+    for (i = 0; i < 16; i++)   
+        aux[i] = '\0';
+    aux[0]=newaux[0];
 
-    //printf("%u\n", buffer);
-    /*
-    char nb[3];
-    for (int j = 0; j < 3; j++)
-        nb[j] = buffer[i++];
-    printf("%s\n", nb);
-    */
+    //printf("aux[0] = %c\n", aux[0]);
+    int bla;
+
+    //printf(".cod\n%s\n", newaux);
+    //printf("length %d\n", strlen(newaux));
+    //printf("aux = %s\n", aux);
+    int h;
+    char nbuffer[blockSize];
+    int index = 0;
+    
+    for (i = 0, j = 1; i < strlen(newaux); i++, j++) {     //newaux[1,0,1,0,1,0,1,0]     aux[1,0] aux[10]   [1                i=1
+        bla = atoi(aux);
+        //printf("bla = %d\n", bla);
+        h = findSF(str, bla, 256);
+        //printf("%d\n", h);
+        if (h != -2) {
+            //printf("bla - %d = %c\n", bla, h);
+            fputc(h, file);
+            //printf("letra - %c\n", h);
+            //printf("%c\n", nbuffer[index]);
+            //printf("%d\n", h);
+            aux[0] = '\0';
+            j = 0;
+            aux[j] = newaux[i + 1];
+            aux[j+1] = '\0';
+        }
+        else {
+            aux[j] = newaux[i+1];
+            aux[j+1] = '\0'; 
+        }    
+    }
+
+    //fwrite(nbuffer, sizeof(char), blockSize, file);
 }
 
 int array_to_num(int arr[],int n){
@@ -177,7 +273,7 @@ void readRLE(FILE *rle, FILE *freq, FILE *file, int rlesize){
     char newbuffer[rlesize];
 
     fread(newbuffer, sizeof(char), rlesize, rle);
-    //printf("%c\n",newbuffer[1348]);
+
 /*
     for (i = 0; i < 1494; i++){
         if (newbuffer[i] == NULL) 
@@ -187,10 +283,10 @@ void readRLE(FILE *rle, FILE *freq, FILE *file, int rlesize){
     }
 */
 
-    for (i = 0; newbuffer[i] != EOF; i++){
+    for (i = 0; i < rlesize; i++){
         if (newbuffer[i] == 0){
             for (j = 0; j < newbuffer[i + 2]; j++){
-                if (!(newbuffer[i+1] > 96 && newbuffer[i] < 101)) printf("%d ", i); 
+                //if (!(newbuffer[i+1] > 96 && newbuffer[i] < 101)) printf("%d ", i); 
                 fputc(newbuffer[i+1], file); 
             }
             i+=2;         
@@ -198,4 +294,3 @@ void readRLE(FILE *rle, FILE *freq, FILE *file, int rlesize){
         else fputc(newbuffer[i], file);
     }
 }
-
