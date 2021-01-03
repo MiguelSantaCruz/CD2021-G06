@@ -239,7 +239,12 @@ void main (int argc, char *argv[]) {
             if (argc > 4){
                 for (int d=4; d<argc; d++){
                     if (strcmp (argv[d], "-c") == 0) r = 1;
-                    if (strcmp (argv[d], "-b") == 0) tam = atoi (argv[d+1]);
+                    if (strcmp (argv[d], "-b") == 0){
+                        if (strcmp (argv[d+1], "K") == 0) tam = 655360; //640 kB 
+                        if (strcmp (argv[d+1], "m") == 0) tam = 8883608; //8MB 
+                        if (strcmp (argv[d+1], "M") == 0) tam = 67108864; //64MB
+
+                    } 
                 }
             }
             
