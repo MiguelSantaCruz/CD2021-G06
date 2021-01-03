@@ -120,14 +120,13 @@ int taxaCompressao (unsigned long tam_I,unsigned long tam_F){
 // Função que ler o ficheiro 
 int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
     FILE *f = fopen(fic,"rb");
-    //unsigned long long total;
     long long n_blocks;
     unsigned long size_of_last_block, block_size = tam_b;
     
     n_blocks = fsize(f, NULL, &block_size, &size_of_last_block);
     
     if (n_blocks != -3){               //controlo do tamanho do ficheiro e do último bloco
-        int n = 0;
+        
         FILE *fp = fopen(fic,"rb"); 
     
         s->tab = calloc(n_blocks, sizeof(struct freq_bloco)); // incialização da estrutura de dados
@@ -149,7 +148,7 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
         buffer = malloc(sizeof(unsigned char)*block_size);
         buffer1 = malloc(sizeof(unsigned char)*block_size * 2);
         
-        n = fread(buffer,sizeof(unsigned char),block_size,fp);// le só o primeiro bloco
+        fread(buffer,sizeof(unsigned char),block_size,fp);// le só o primeiro bloco
         
         int rl = rle(buffer,buffer1, block_size);
         
@@ -166,7 +165,7 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
             }
         
             if (size_of_last_block != tam_b){
-                n = fread(buffer,sizeof(unsigned char),size_of_last_block,fp);
+                fread(buffer,sizeof(unsigned char),size_of_last_block,fp);
                 freq(buffer,size_of_last_block,i,s);
             }
             else {
@@ -243,8 +242,7 @@ int main (int argc, char *argv[]) {
                         if (strcmp (argv[d+1], "K") == 0) tam = 655360; //640 kB 
                         if (strcmp (argv[d+1], "m") == 0) tam = 8883608; //8MB 
                         if (strcmp (argv[d+1], "M") == 0) tam = 67108864; //64MB
-
-                    } 
+                    }
                 }
             }
             
@@ -260,7 +258,7 @@ int main (int argc, char *argv[]) {
                 if (r == 1 || s.rle == 1) {
                     printf ("Compressão RLE: %s (%d por cento de compressão)\n",s.nome, s.taxaC);
                     printf ("Tamanho dos blocos analisados no ficheiro RLE: %d/%d bytes\n", s.tamBrle[0],
-                                    ((s.n_blocos == 1 ) ? (s.tamBrle[s.n_blocos]) : (s.tamBrle[s.n_blocos -1])));
+                                    ((s.n_blocos == 1 ) ? 0 : (s.tamBrle[s.n_blocos -1])));
                 }
                 printf ("Tempo de execução do módulo (milissegundos): %.2f\n", final);
         
