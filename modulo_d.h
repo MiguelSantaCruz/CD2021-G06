@@ -15,7 +15,7 @@
 void readRLE(FILE *rle, FILE *freq, FILE *file, int rlesize);
 
 //Lê cod
-void readCod(FILE *cod,long int shafsize);
+void readCod(FILE *cod,long int shafsize, char newaux[], FILE* file);
 
 //Array de inteiros para um inteiro só
 int array_to_num(int arr[],int n);
@@ -23,8 +23,8 @@ int array_to_num(int arr[],int n);
 //Lê shaf
 void readShaf(FILE *shaf, FILE *cod, FILE *file, long int shafsize);
 
-long decimalToBinary(int decimalnum);
+int  decimalToBinary(int decimalnum);
 
-int charToInt(char *c);
+int charToInt(unsigned char *c);
 
 #endif
