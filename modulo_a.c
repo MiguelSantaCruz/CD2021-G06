@@ -74,7 +74,7 @@ unsigned long rle (unsigned char * v, unsigned char * f,unsigned long tamBloco){
     int contaR = 1;
     int iv, i = 0;
     unsigned long t = tamBloco;
-    for (int iv = 0; iv < tamBloco; iv++){
+    for (iv = 0; iv < tamBloco; iv++){
         if (v[iv] == 0){                   // exceção para o carater 0
             f[i] = v[iv];
             f[i+1] = v[iv];
@@ -120,7 +120,7 @@ int taxaCompressao (unsigned long tam_I,unsigned long tam_F){
 // Função que ler o ficheiro 
 int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
     FILE *f = fopen(fic,"rb");
-    unsigned long long total;
+    //unsigned long long total;
     long long n_blocks;
     unsigned long size_of_last_block, block_size = tam_b;
     
@@ -222,7 +222,7 @@ int ler_ficheiro (char fic [],unsigned long tam_b, char a [], Stack *s,int r){
 
 
 
-void main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) {
     clock_t begin = clock();
     float final;
 
@@ -269,4 +269,6 @@ void main (int argc, char *argv[]) {
             }
         }
     else printf("Não é este módulo\n");
+    
+    return 0;
 }
