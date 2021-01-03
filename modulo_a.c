@@ -253,7 +253,7 @@ void main (int argc, char *argv[]) {
                 printf ("Número de Blocos : %d\n", s.n_blocos);                
                 printf ("Tamanho dos blocos analisados no ficheiro Original: %d/%d bytes\n",s.tamB,s.tamU);
                 if (r == 1 || s.rle == 1) {
-                    printf ("Compressão RLE: %s (%d  compressão)\n",s.nome, s.taxaC);
+                    printf ("Compressão RLE: %s (%d por cento de compressão)\n",s.nome, s.taxaC);
                     printf ("Tamanho dos blocos analisados no ficheiro RLE: %d/%d bytes\n", s.tamBrle[0],
                                     ((s.n_blocos == 1 ) ? (s.tamBrle[s.n_blocos]) : (s.tamBrle[s.n_blocos -1])));
                 }
