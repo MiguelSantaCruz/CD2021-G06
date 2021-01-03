@@ -226,7 +226,7 @@ int main (int argc, char *argv[]) {
     float final;
 
     Stack s;
-    int tam = 65536;
+    int tam = 65536; // tamanho por defeito 64kB
     int p = strlen(argv[1]);
     char a [p + 30];
     strcpy(a,argv[1]);
@@ -240,7 +240,7 @@ int main (int argc, char *argv[]) {
                     if (strcmp (argv[d], "-c") == 0) r = 1;
                     if (strcmp (argv[d], "-b") == 0){
                         if (strcmp (argv[d+1], "K") == 0) tam = 655360; //640 kB 
-                        if (strcmp (argv[d+1], "m") == 0) tam = 8883608; //8MB 
+                        if (strcmp (argv[d+1], "m") == 0) tam = 8388608; //8MB 
                         if (strcmp (argv[d+1], "M") == 0) tam = 67108864; //64MB
                     }
                 }
