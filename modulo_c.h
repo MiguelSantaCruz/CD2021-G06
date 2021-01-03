@@ -53,7 +53,7 @@ typedef struct fileData{
     char shafFilename[50];
 } *fileData;
 //Main deste módulo
-int mainModuloC(int argc,char* argv[]);
+int main(int argc,char* argv[]);
 //Função que lê o ficheiro .cod e cria uma matriz com os códigos dos simbolos
 void readCodFile(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1] ,char* ,positionIndicator* ,fileData* );
 //Função que lê do ficheiro o bloco e escreve a matriz dos codigos

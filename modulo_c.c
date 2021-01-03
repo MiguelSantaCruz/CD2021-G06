@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 
-int mainModuloC(int argc, char *argv[]){
+int main(int argc, char *argv[]){
     positionIndicator posIndicator = malloc(sizeof(struct positionIndicator));
     posIndicator->codIndex = 0;
 
@@ -99,7 +99,7 @@ int readToBufferIfNeeded(fileData* fData,positionIndicator* posIndicator,char* b
 
 void writeBlockToShaf(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1],fileData* fData){
     //buffer de leitura do ficheiro original
-    char* buffer = (char*) malloc(((*fData)->blockSize+1)*sizeof(char));
+    unsigned char* buffer = (char*) malloc(((*fData)->blockSize+1)*sizeof(char));
 
     //Array que contem a codificação binária a escrever no ficheiro .shaf
     //A constante 50 pode ser qualquer valor (espaço para guardar o tamanho do bloco)
@@ -122,9 +122,11 @@ void writeBlockToShaf(char codesMatrix[NUMBER_OF_SYMBOLS+1][CODE_SIZE+1],fileDat
     code[8] = '\0';
     //Escrever para binaryCodes a tradução do ficheiro original
     for (int i = 0; i<(*fData)->blockSize; i++){
-        for (int j = 0; codesMatrix[buffer[i]][j]!='\0'; j++){
+        int c = (unsigned) buffer[i];
+        for (int j = 0; codesMatrix[c][j]!='\0'; j++){
             if(codeBit>7) {
                 binaryCodes[indexCode++]= strtol(code,NULL,2);
+                //printf(" - convertido para: %ld \n",strtol(code,NULL,2));
                 codeBit = 0;
                 }
             code[codeBit++]=codesMatrix[buffer[i]][j];
