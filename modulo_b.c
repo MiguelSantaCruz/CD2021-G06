@@ -133,7 +133,6 @@ int main (int argc, char* argv[]){
     int indexpointer = index;
     struct node nodes[256]; //struct que guarda os dados de cada simbolo
     int array_size = 0; //tamanho do array das frequencias
-    int pos = 0;
     char strtemp2[100];
     int fst_time = 0; //Variavel que diz se estamos no primeiro bloco
     char *exit_buffer; //buffer de saida
@@ -175,7 +174,7 @@ int main (int argc, char* argv[]){
             if(freq_Array[f]!=0) array_size++;
         }
 
-        minSort (freq_Array, array_size); //Função que ordena com ordem decrescente as frequencias
+        arraySort (freq_Array, array_size); //Função que ordena com ordem decrescente as frequencias
 
         if(verbose){
             for(int h=0; h<array_size; h++){
@@ -286,7 +285,7 @@ int main (int argc, char* argv[]){
             if(freq_Array[f]!=0) array_size++;
     }
 
-    minSort (freq_Array, array_size); //Função que ordena com ordem decrescente as frequencias
+    arraySort (freq_Array, array_size); //Função que ordena com ordem decrescente as frequencias
 
     if(verbose){
         for(int h=0; h<array_size; h++){
@@ -399,9 +398,8 @@ int main (int argc, char* argv[]){
 }
 
 int distArroba (FILE *freq){ //Função que calcula a distancia ate ao fim do bloco
-    int size = 0, i=0;
+    int i=0;
     char c;
-    int arrobas = 0;
     
     fseek(freq, 256, SEEK_CUR);
     c = fgetc(freq);
@@ -418,7 +416,6 @@ void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs)
     char c;
     char str[20];
     int counter=0;
-    int counter2=0;
 
     while(j<strlen(buffer)){
         if (buffer[j] != ';'){
@@ -444,7 +441,7 @@ void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs)
     }
 }
 
-void minSort (int *freqArray, int array_size){ //Função que ordena o array das frequencias
+void arraySort (int *freqArray, int array_size){ //Função que ordena o array das frequencias
     int i,j,temp;
 
     for (i = 0; i <array_size; i++){
@@ -535,7 +532,6 @@ void calcular_codigos_SF (int *freqArray, char _matrix[NUMBER_OF_FREQ][NUMBER_OF
  } 
 
  void moveToBuffer(struct node nodes[], char *exitBuffer, int posmove){ //Função que dada a strut com os dados move esses dados para o buffer de saida
-     char *c;
      int k=posmove;
      int counter=0;
      int counter2 = 0;
