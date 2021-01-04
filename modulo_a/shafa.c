@@ -1,3 +1,10 @@
+/* Autores: João Gonçalves - A93204 , Maria Gomes - A93314
+Data: 03/01/2020
+Este ficheiro contém a main do módulo A. 
+*/
+
+
+
 #include "modulo_a.c"
 
 void main (int argc, char *argv[]) {
