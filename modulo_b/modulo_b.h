@@ -28,7 +28,7 @@ void readFreqs (FILE *freq, int indexPointer, char *buffer, long long block_size
 
 int distArroba (FILE *freq);
 
-void toStruct (struct node nodes[], char *buffer, int *freq_Array, int pos_freqs);
+void toStruct (struct node nodes[], char *buffer, int *freq_Array, int pos_freqs, int block_size);
 
 void arraySort (int *freq_Array, int array_size);
 

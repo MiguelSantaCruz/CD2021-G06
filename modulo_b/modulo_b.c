@@ -28,7 +28,7 @@ Ao longo do código estão explicados os objetivos das variaveis mais importante
 
 #define NUMBER_OF_FREQ 256
 
-int main (int argc, char* argv[]){
+void shanonFano (int argc, char *argv[]){
 
     clock_t start_time = clock(); //Iniciar contador do tempo de execução
     int verbose=0;
@@ -119,10 +119,11 @@ int main (int argc, char* argv[]){
         }
     }
 
+    int n_blocks_aux = strlen(n_blocks_s);
     int nb=atoi(n_blocks_s);
     n_blocks = nb;
     int pos_freqs = index-3-strlen(n_blocks_s); //posição em que as frequencias se encontram no buffer
-    int posmove = index +1;
+    int posmove = index;
     index = index-k-1;
     fseek(ficheiroFreq, index, SEEK_SET);
 
@@ -167,7 +168,7 @@ int main (int argc, char* argv[]){
         entry_buffer[dist]='\0';
         i++;
         indexpointer += dist;
-        toStruct (nodes, entry_buffer, freq_Array, pos_freqs); //Passar os dados do buffer para uma struct de modo a organizar os dados
+        toStruct (nodes, entry_buffer, freq_Array, pos_freqs, n_blocks_aux); //Passar os dados do buffer para uma struct de modo a organizar os dados
 
         pos_freqs = strlen(c_block_size)+2;
         for(int f=0; f<256; f++){ //Calculo do tamanho do array de frequencias (numero de simbolos)
@@ -175,6 +176,11 @@ int main (int argc, char* argv[]){
         }
 
         arraySort (freq_Array, array_size); //Função que ordena com ordem decrescente as frequencias
+
+        /*
+        for(int h =0; h<array_size; h++){
+            printf("Freq - %d \n",freq_Array[h]);
+        }*/
 
         if(verbose){
             for(int h=0; h<array_size; h++){
@@ -279,7 +285,7 @@ int main (int argc, char* argv[]){
     fread(entry_buffer, sizeof(char), dist, ficheiroFreq); //Função que le do ficheio para o buffer
     entry_buffer[dist]='\0';
     indexpointer += dist;
-    toStruct (nodes, entry_buffer, freq_Array, pos_freqs); //Passar os dados do buffer para uma struct de modo a organizar os dados
+    toStruct (nodes, entry_buffer, freq_Array, pos_freqs, n_blocks_aux); //Passar os dados do buffer para uma struct de modo a organizar os dados
 
     for(int f=0; f<256; f++){ //Calculo do tamanho do array de frequencias (numero de simbolos)
             if(freq_Array[f]!=0) array_size++;
@@ -410,7 +416,7 @@ int distArroba (FILE *freq){ //Função que calcula a distancia ate ao fim do bl
     return i;
 }
 
-void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs){ //Função que constroi a struct com os dados do buffer e o array das frequencias
+void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs, int block_size){ //Função que constroi a struct com os dados do buffer e o array das frequencias
     int i = 0;
     int j = pos_freqs;
     char c;
@@ -423,14 +429,14 @@ void toStruct (struct node nodes[],char *buffer, int *freq_array, int pos_freqs)
                 counter++;
             }
             if (buffer[j]!= '0'){
-                nodes[i].init_symbol = j+3-counter; //Guardar a posição inicial da frequencia
+                nodes[i].init_symbol = j+3-counter+block_size; //Guardar a posição inicial da frequencia
                 while (buffer[j] != ';' && j<strlen(buffer)){ //Percorrer a frequencia para chegar á posição final
                     c = buffer[j];
                     strncat(str,&c,1); //Concatenar na variavel str a frequencia
                     j++;
                 }
                 strcpy(nodes[i].code, "x");
-                nodes[i].final_symbol = j+2-counter; //Guardar a posição final
+                nodes[i].final_symbol = j+2-counter+block_size; //Guardar a posição final
                 nodes[i].freq = atoi(str); //Guardar a frequencia na struct
                 if(atoi(str)!= 0) freq_array[i] = atoi(str); //Guardar a frequencia no array das frequencias
                 str[0] = '\0'; //Reset da variavel str
@@ -543,15 +549,14 @@ void calcular_codigos_SF (int *freqArray, char _matrix[NUMBER_OF_FREQ][NUMBER_OF
                 strncat(exitBuffer, ";", 1);
                 counter++;
             }
-
             strcat(exitBuffer, nodes[i].code); //Escrever o codigo do simbolo
             k+=strlen(nodes[i].code);
             counter2+=strlen(nodes[i].code)-(nodes[i].final_symbol - nodes[i].init_symbol+1);
             if(counter!=255){
+                counter++;
+                k++;
                 strncat(exitBuffer, ";", 1); //Adicionar ";" depois de cada codigo
             }
-            counter++;
-            k++;
             if ((nodes[i].final_symbol - nodes[i].init_symbol+1)>strlen(nodes[i].code)){ 
                 k+=nodes[i].final_symbol - nodes[i].init_symbol+1-strlen(nodes[i].code);
             }//Se o comprimento da frequencia for maior que o comprimento do codigo essa diferença é incrementada a k
